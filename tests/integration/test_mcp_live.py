@@ -23,7 +23,7 @@ def _text(res):
     return "".join(getattr(c, "text", "") for c in res.content)
 
 
-def test_design_build_look_check_roundtrip(tmp_path):
+def test_build_look_check_roundtrip(tmp_path):
     bridge.run("app.documents.add(adsk.core.DocumentTypes.FusionDesignDocumentType); result = 1")
     env = dict(os.environ, FUSIONWRIGHT_HOME=str(tmp_path))
     params = StdioServerParameters(command=sys.executable, args=["-m", "fusionwright"], env=env)
@@ -32,13 +32,11 @@ def test_design_build_look_check_roundtrip(tmp_path):
         async with Client(params) as c:
             st = json.loads(_text(await c.call_tool("fusion_status", {})))
             assert st["bridge"]["ok"] if isinstance(st["bridge"], dict) and "ok" in st["bridge"] else True
-            d = await c.call_tool("wood_design_cabinet", {})
-            assert not d.is_error
-            b = await c.call_tool("wood_build_in_fusion", {})
-            assert not b.is_error, _text(b)
-            out = json.loads(_text(b))
-            assert out["verification"]["passed"], out
-            assert out["finger_pulls"] == 5
+            code = ("board('Block', 0, 0, 0, 3, 2, 1)\nresult = 1")
+            r = await c.call_tool("fusion_run", {"code": code})
+            assert not r.is_error, _text(r)
+            chk = json.loads(_text(await c.call_tool("fusion_check", {"expected_size_in": [3, 2, 1]})))
+            assert chk["passed"], chk
             look = await c.call_tool("fusion_look", {"views": ["iso", "front"], "width": 600, "height": 450})
             imgs = [x for x in look.content if getattr(x, "type", "") == "image"]
             assert len(imgs) == 2

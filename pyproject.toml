@@ -5,16 +5,15 @@ build-backend = "hatchling.build"
 [project]
 name = "fusionwright"
 version = "0.1.0"
-description = "Open-source MCP server that lets AI model, verify and export anything in Autodesk Fusion, or with no CAD software at all."
+description = "Open-source MCP server that lets an AI model, verify, render and export anything in your live Autodesk Fusion."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 authors = [{ name = "Luigui Sánchez Soca" }]
-keywords = ["mcp", "fusion", "autodesk", "cad", "3d-modeling", "cadquery", "step", "ai-agents", "woodworking"]
+keywords = ["mcp", "fusion", "autodesk", "fusion-360", "cad", "3d-modeling", "step", "ai-agents"]
 dependencies = ["mcp>=2.3,<3"]
 
 [project.optional-dependencies]
-cad = ["cadquery>=2.4", "numpy", "pillow"]    # open-source CAD backend: no Autodesk software needed
 dev = ["pytest"]
 
 [project.scripts]
