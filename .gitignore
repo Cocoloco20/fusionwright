@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+dist/
+scratch/
+tests/last_report.json
+.fusion-bridge-token
+*.token
+.env
+.DS_Store
+tests/integration/last_report.json

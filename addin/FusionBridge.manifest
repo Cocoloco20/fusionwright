@@ -1,0 +1,13 @@
+{
+    "autodeskProduct": "Fusion",
+    "type": "addin",
+    "id": "7c1f6c2e-3b7a-4f0e-9a6d-2f4b8c1d5e90",
+    "author": "Luigui Sánchez Soca",
+    "description": {
+        "": "Local bridge that lets Claude run Fusion API code in the live session (localhost only, token protected)."
+    },
+    "version": "1.0.0",
+    "runOnStartup": false,
+    "supportedOS": "windows|mac",
+    "editEnabled": true
+}
