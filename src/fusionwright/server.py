@@ -2,8 +2,9 @@
 
 Two families of tools:
   fusion_*  drive a live Autodesk Fusion through the local FusionBridge add-in (loopback + token)
-  wood_*    furniture design, cut lists, sheet nesting, drawings, STL/OBJ: pure Python, NO CAD needed
   cad_*     open-source CAD (CadQuery / OpenCascade): run any CadQuery code, exact STEP/STL, kernel checks, previews
+Optional add-on:
+  wood_*    woodworking: furniture design, cut lists, sheet nesting, drawings, STL/OBJ (pure Python, NO CAD needed)
 """
 from __future__ import annotations
 
@@ -40,7 +41,7 @@ Free route (no Fusion, no membership):
   cad_preview / cad_check / cad_export work on the last cad_run result or the current wood_* project.
 Fusion route (needs Fusion + the bridge add-in):
   fusion_api('ClassName') lists real API members (read it before writing code), then fusion_run(code).
-Furniture projects (both routes):
+Woodworking add-on (optional; both routes):
 1. wood_design_cabinet(...)  -> parametric design + cut list + sheet nesting + drawing + STL (+ STEP and previews when
    CadQuery is installed), all written to disk. open_deg=30 shows the lids hinged open.
 2. cad_preview(['iso','front'])  -> see it without any CAD; cad_check() -> exact interference/validity check.
@@ -247,14 +248,16 @@ def wood_design_cabinet(width: float = 24.0, depth: float = 22.5, tower_h: float
                         skin_t: float = 0.5, ply_t: float = 0.75, lid_t: float = 0.75, base_z: float = 3.25,
                         caster_h: float = 2.5, foot_arm: float = 4.5, arc_on_back: bool = True,
                         open_deg: float = 0.0, door: bool = True, door_open_deg: float = 0.0,
-                        door_pull: str = "push",
+                        door_pull: str = "push", door_leaves: int = 2, drawer: bool = True,
+                        drawer_out: float = 0.0, drawer_depth: float = 18.0,
                         section_widths: list[float] | None = None,
                         name: str = "Rolling oak slat cabinet") -> dict:
     """Design the rolling oak-slat cabinet from the hand sketch (inches): vertical oak slats on four sides, a circular
     scoop cut through the slat tops, five hinged lids at 24/19/14 in, stepped plywood boxes with finger openings,
-    a push-to-open front door onto the centre compartment (door_open_deg=90 shows it open; door_pull='bar' adds a
-    slim vertical pull), and four L-shaped corner feet
-    that hide swivel casters. open_deg shows the lids hinged open (try 30).
+    a pair of push-to-open front doors (2 hinges each) onto the large centre compartment, which holds one pull-out
+    drawer (door_open_deg=90 and drawer_out=12 show them open; door_pull='bar' adds slim vertical pulls;
+    door_leaves=1 gives one door), and four L-shaped corner feet that hide swivel casters. open_deg shows the lids
+    hinged open (try 30).
     Writes cut list, three-view drawing, sheet layout, STL, OBJ, project.json and, if CadQuery is installed, an exact
     STEP plus preview images."""
     try:
@@ -262,6 +265,7 @@ def wood_design_cabinet(width: float = 24.0, depth: float = 22.5, tower_h: float
                           front_slats=front_slats, side_slats=side_slats, slat_gap=slat_gap, skin_t=skin_t,
                           ply_t=ply_t, lid_t=lid_t, base_z=base_z, caster_h=caster_h, foot_arm=foot_arm,
                           arc_on_back=arc_on_back, open_deg=open_deg, door=door, door_open_deg=door_open_deg, door_pull=door_pull,
+                          door_leaves=door_leaves, drawer=drawer, drawer_out=drawer_out, drawer_depth=drawer_depth,
                           section_widths=section_widths, name=name)
     except ValueError as e:
         raise ToolError(str(e))

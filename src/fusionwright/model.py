@@ -1,4 +1,4 @@
-"""Backend-neutral project model: a furniture project is a list of parts ("boards").
+"""Backend-neutral project model used by the add-ons (e.g. the woodworking one): a project is a list of parts ("boards").
 
 Everything here is plain Python (no CAD needed). Units are inches, X = width, Y = depth
 (front at Y=0), Z = up. A part carries its bounding box (x, y, z, sx, sy, sz) and, when it is not a plain

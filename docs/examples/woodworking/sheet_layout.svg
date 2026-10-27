@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 336 644" width="336" height="644" font-family="Helvetica, Arial, sans-serif">
+<rect width="336" height="644" fill="white"/>
+<text x="24.0" y="35" font-size="12" fill="#222">Sheet 1 - 48 x 96 in</text>
+<rect x="24.0" y="40" width="288.0" height="576.0" fill="#f6f1e4" stroke="#222" stroke-width="1.5"/>
+<rect x="24.0" y="40.0" width="129.0" height="138.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="27.0" y="51.0" font-size="8" fill="#3a2f12">Bottom panel</text>
+<rect x="153.8" y="40.0" width="115.5" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="156.8" y="51.0" font-size="8" fill="#3a2f12">End wall left</text>
+<rect x="24.0" y="178.8" width="115.5" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="27.0" y="189.8" font-size="8" fill="#3a2f12">End wall right</text>
+<rect x="140.2" y="178.8" width="85.5" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="143.2" y="189.8" font-size="8" fill="#3a2f12">Divider D1</text>
+<rect x="226.5" y="178.8" width="55.5" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="229.5" y="189.8" font-size="8" fill="#3a2f12">Divider D2</text>
+<rect x="24.0" y="299.5" width="55.5" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="27.0" y="310.5" font-size="8" fill="#3a2f12">Divider D3</text>
+<rect x="80.2" y="299.5" width="85.5" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="83.2" y="310.5" font-size="8" fill="#3a2f12">Divider D4</text>
+<rect x="270.0" y="40.0" width="24.0" height="115.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<rect x="282.8" y="178.8" width="24.0" height="115.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<rect x="166.5" y="299.5" width="24.0" height="115.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<rect x="191.2" y="299.5" width="24.0" height="115.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<rect x="216.0" y="299.5" width="28.5" height="102.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="219.0" y="310.5" font-size="8" fill="#3a2f12">Drawer bottom</text>
+<rect x="245.2" y="299.5" width="22.5" height="85.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<rect x="268.5" y="299.5" width="22.5" height="85.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<rect x="24.0" y="420.2" width="22.5" height="85.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<rect x="47.2" y="420.2" width="22.5" height="85.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<rect x="70.5" y="420.2" width="45.0" height="55.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="73.5" y="431.2" font-size="8" fill="#3a2f12">Front wall S3</text>
+<rect x="116.2" y="420.2" width="45.0" height="55.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="119.2" y="431.2" font-size="8" fill="#3a2f12">Back wall S3</text>
+</svg>

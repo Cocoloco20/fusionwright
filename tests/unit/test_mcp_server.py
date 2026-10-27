@@ -114,7 +114,7 @@ def test_cad_check_and_export_on_the_cabinet(tmp_path):
             await c.call_tool("wood_design_cabinet", {"open_deg": 30})
             chk = await c.call_tool("cad_check", {})
             data = json.loads(_text(chk))
-            assert data["parts"] == 92 and data["all_valid"] is True and data["problems"] == []
+            assert data["parts"] == 99 and data["all_valid"] is True and data["problems"] == []
             tall = json.loads(_text(await c.call_tool("cad_check", {"expected_size_in": [24, 22.5, 24]})))
             assert tall["passed"] is False and "Z size" in tall["problems"][0]      # open lids rise above 24 in
             ex = await c.call_tool("cad_export", {"format": "step"})

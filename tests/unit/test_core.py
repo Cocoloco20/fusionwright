@@ -46,21 +46,36 @@ def test_sketch_details_are_present():
     assert len(cuts) >= 6
 
 
-def test_front_door_opens_onto_the_centre_compartment():
+def test_front_doors_open_onto_the_centre_compartment_with_a_drawer():
     p = build_cabinet()
-    door = [b for b in p.boards if "(door)" in b.name]
-    assert len(door) == 4 and sum(b.name.startswith("Door batten") for b in p.boards) == 2
+    doors = [b for b in p.boards if "(door" in b.name]
+    assert len(doors) == 4 and sum(b.name.startswith("Door") and "batten" in b.name for b in p.boards) == 4
+    assert {b.name.split("(")[1] for b in doors} == {"door L)", "door R)"}          # two leaves, two slats each
     wall = next(b for b in p.boards if b.name == "Front wall S3")
-    assert any(o["op"] == "cut" for o in wall.shape)                     # the opening the door covers
-    assert any("Push-to-open" in h["item"] for h in p.hardware)           # nothing visible on the front
-    assert not any(o["k"] == "cyl" and o["op"] == "cut" for b in door for o in b.shape)    # no hole, no pull
+    assert any(o["op"] == "cut" for o in wall.shape)                     # the opening the doors cover
+    hinge = next(h for h in p.hardware if "Butt hinge 1-1/2" in h["item"])
+    assert hinge["qty"] == 4                                             # two hinges on each door
+    assert any("Push-to-open" in h["item"] and h["qty"] == 2 for h in p.hardware)    # nothing visible on the front
+    assert not any(o["k"] == "cyl" and o["op"] == "cut" for b in doors for o in b.shape)    # no hole, no pull
+    drawer = [b for b in p.boards if b.group == "drawer"]
+    assert {b.name for b in drawer} == {"Drawer front", "Drawer back", "Drawer side left", "Drawer side right",
+                                        "Drawer bottom"}
+    assert any("drawer slides" in h["item"] for h in p.hardware)
+    opening = next(b for b in p.boards if b.name == "Front wall S3")
+    assert all(b.y >= opening.y + opening.sy - 1e-9 for b in drawer)     # all behind the front wall when closed
     bar = build_cabinet(door_pull="bar")
-    assert any(b.name == "Door pull bar" for b in bar.boards) and bar.overall()[1] > 22.5
-    assert all(b.rot is None for b in door)                              # closed by default
-    opened = build_cabinet(door_open_deg=90)
-    assert all(b.rot and b.rot["deg"] == -90 for b in opened.boards if "(door)" in b.name or b.name.startswith("Door batten"))
-    assert opened.overall()[1] > 22.5 + 8                                # swings outward, clear of the front
-    assert not any("(door)" in b.name for b in build_cabinet(door=False).boards)
+    assert sum(b.name.endswith("pull bar") for b in bar.boards) == 2 and bar.overall()[1] > 22.5
+    assert all(b.rot is None for b in doors)                             # closed by default
+    opened = build_cabinet(door_open_deg=90, drawer_out=12)
+    deg = {b.name: b.rot["deg"] for b in opened.boards if b.rot and ("(door" in b.name or "batten" in b.name)}
+    assert all(d == -90 for n, d in deg.items() if "door L" in n or "Door L" in n)   # left leaf hinged on the left
+    assert all(d == 90 for n, d in deg.items() if "door R" in n or "Door R" in n)    # right leaf hinged on the right
+    assert opened.overall()[1] > 22.5 + 8                                # leaves and drawer swing/slide clear
+    out_front = next(b for b in opened.boards if b.name == "Drawer front")
+    assert out_front.y == pytest.approx(next(b for b in p.boards if b.name == "Drawer front").y - 12)
+    assert not any("(door" in b.name for b in build_cabinet(door=False).boards)
+    assert len([b for b in build_cabinet(door_leaves=1).boards if "(door)" in b.name]) == 4
+    assert not any(b.group == "drawer" for b in build_cabinet(drawer=False).boards)
 
 
 def test_open_pose_rotates_the_lids_and_still_fits():
@@ -131,7 +146,7 @@ def test_stl_winding_is_outward_for_boxes_arcs_and_cylinders():
         a, b, c = v[i], v[i + 1], v[i + 2]
         vol += (a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0])) / 6
     assert vol > 3000 and vol == pytest.approx(mesh_volume(p), rel=1e-6)
-    assert skipped_cuts(p) == 6                       # this fallback leaves cuts out and says so
+    assert skipped_cuts(p) == 7                       # this fallback leaves cuts out and says so
     assert to_obj(p).count("\no ") > 80
 
 
@@ -167,6 +182,12 @@ def test_bad_params_are_explained():
         build_cabinet(base_z=2.0)
     with pytest.raises(ValueError, match="door_pull"):
         build_cabinet(door_pull="knob")
+    with pytest.raises(ValueError, match="door_leaves"):
+        build_cabinet(door_leaves=3)
+    with pytest.raises(ValueError, match="open them"):
+        build_cabinet(drawer_out=5)                    # the drawer is behind closed doors
+    with pytest.raises(ValueError, match="drawer_out"):
+        build_cabinet(door_open_deg=90, drawer_out=40)
     with pytest.raises(ValueError, match="door_open_deg"):
         build_cabinet(door_open_deg=200)
     with pytest.raises(ValueError, match="foot_arm"):
