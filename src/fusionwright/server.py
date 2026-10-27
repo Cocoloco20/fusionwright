@@ -246,18 +246,23 @@ def wood_design_cabinet(width: float = 24.0, depth: float = 22.5, tower_h: float
                         center_h: float = 14.0, front_slats: int = 10, side_slats: int = 6, slat_gap: float = 0.15,
                         skin_t: float = 0.5, ply_t: float = 0.75, lid_t: float = 0.75, base_z: float = 3.25,
                         caster_h: float = 2.5, foot_arm: float = 4.5, arc_on_back: bool = True,
-                        open_deg: float = 0.0, section_widths: list[float] | None = None,
+                        open_deg: float = 0.0, door: bool = True, door_open_deg: float = 0.0,
+                        door_pull: str = "push",
+                        section_widths: list[float] | None = None,
                         name: str = "Rolling oak slat cabinet") -> dict:
     """Design the rolling oak-slat cabinet from the hand sketch (inches): vertical oak slats on four sides, a circular
     scoop cut through the slat tops, five hinged lids at 24/19/14 in, stepped plywood boxes with finger openings,
-    and four L-shaped corner feet that hide swivel casters. open_deg shows the lids hinged open (try 30).
+    a push-to-open front door onto the centre compartment (door_open_deg=90 shows it open; door_pull='bar' adds a
+    slim vertical pull), and four L-shaped corner feet
+    that hide swivel casters. open_deg shows the lids hinged open (try 30).
     Writes cut list, three-view drawing, sheet layout, STL, OBJ, project.json and, if CadQuery is installed, an exact
     STEP plus preview images."""
     try:
         p = build_cabinet(width=width, depth=depth, tower_h=tower_h, step_h=step_h, center_h=center_h,
                           front_slats=front_slats, side_slats=side_slats, slat_gap=slat_gap, skin_t=skin_t,
                           ply_t=ply_t, lid_t=lid_t, base_z=base_z, caster_h=caster_h, foot_arm=foot_arm,
-                          arc_on_back=arc_on_back, open_deg=open_deg, section_widths=section_widths, name=name)
+                          arc_on_back=arc_on_back, open_deg=open_deg, door=door, door_open_deg=door_open_deg, door_pull=door_pull,
+                          section_widths=section_widths, name=name)
     except ValueError as e:
         raise ToolError(str(e))
     d, engine = _save(p)
@@ -297,15 +302,16 @@ def wood_build_in_fusion(project: str = "") -> dict:
     boards = [b.__dict__ for b in p.boards]
     terms = {"oak": ["oak"], "ply": ["birch", "plywood", "maple", "pine"], "steel": ["steel"],
              "rubber": ["rubber", "black"]}
-    made = rotated = 0
+    made = 0
     for start in range(0, len(boards), 12):
         r = _fusion(S.BUILD, boards=boards, start=start, end=start + 12, appearance_terms=terms)
         made += r["made"]
-        rotated += r.get("rotated", 0)
+    rots = [{"name": b.name, "rot": b.rot} for b in p.boards if b.rot]
+    rotated = _fusion(S.POSE, rots=rots)["posed"] if rots else 0
     cuts = _fusion(S.CUTS, features=p.features)["finger_pulls_cut"] if p.features else []
     w, d, h = p.overall()
     check = fusion_check(expected_size_in=[w, d, h])
-    return {"parts_built": made, "hinged_open": rotated, "finger_pulls": len(cuts), "verification": check}
+    return {"parts_built": made, "posed_open": rotated, "finger_pulls": len(cuts), "verification": check}
 
 
 # ------------------------------------------------------------------ open-source CAD tools (CadQuery, no Fusion)

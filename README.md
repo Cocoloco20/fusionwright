@@ -12,9 +12,9 @@ An open-source [MCP](https://modelcontextprotocol.io) server that lets an AI ass
 
 ![Rolling oak slat cabinet, rendered by Fusion](docs/images/render.png)
 
-> Built, rendered and checked end to end through this server, from a hand sketch: 90 named parts (arc-cut slats, hinged lids, finger openings, L-shaped feet hiding four casters), 24 x 22.5 x 24 in, zero interferences, one 4x8 plywood sheet, ~9.2 board feet of oak. The Fusion model and the open-source CadQuery model agree to the cubic inch (3454.89 in3). Details of how the sketch was read: [docs/SKETCH_SPEC.md](docs/SKETCH_SPEC.md).
+> Built, rendered and checked end to end through this server, from a hand sketch: 92 named parts (arc-cut slats, hinged lids, a hinged front door, finger openings, L-shaped feet hiding four casters), 24 x 22.5 x 24 in, zero interferences, one 4x8 plywood sheet, ~9.2 board feet of oak. The Fusion model and the open-source CadQuery model agree to the cubic inch (3454.89 in3). Details of how the sketch was read: [docs/SKETCH_SPEC.md](docs/SKETCH_SPEC.md).
 
-![Same cabinet with the lids hinged open, built with no Autodesk software](docs/images/open_iso_opensource.png)
+![Same cabinet with the lids and the front door open, built with no Autodesk software](docs/images/open_iso_opensource.png)
 
 ![Builder drawing generated with no CAD](docs/images/drawing_three_view.svg)
 
@@ -46,7 +46,7 @@ A small surface on purpose: [fewer, higher-level tools beat dozens of thin wrapp
 
 | Tool | Purpose |
 |---|---|
-| `wood_design_cabinet` | Parametric slatted rolling cabinet (arc scoop, five hinged lids, casters hidden in L-shaped feet; `open_deg` poses the lids open); writes cut list, drawing, sheet layout, STL, OBJ, project.json, and with CadQuery an exact STEP + previews |
+| `wood_design_cabinet` | Parametric slatted rolling cabinet (arc scoop, five hinged lids, a push-to-open front door onto the centre compartment, casters hidden in L-shaped feet; `open_deg` / `door_open_deg` pose the lids and door open); writes cut list, drawing, sheet layout, STL, OBJ, project.json, and with CadQuery an exact STEP + previews |
 | `cad_run` | Run CadQuery code for any solid; returns STEP, STL, measurements and previews (open source, no Fusion) |
 | `cad_preview` | Shaded previews of the last `cad_run` result or the current project (8 views), no CAD application needed |
 | `cad_check` | Exact kernel check of the project: validity, boolean interference, expected size |

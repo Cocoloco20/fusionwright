@@ -43,7 +43,24 @@ def test_sketch_details_are_present():
     assert sum(n.endswith("wheel") for n in names) == 4 and sum(n.endswith("top plate") for n in names) == 4
     # wedge and square openings are cuts through the plywood fronts
     cuts = [b for b in p.boards if b.shape and any(o["op"] == "cut" for o in b.shape)]
-    assert len(cuts) >= 5
+    assert len(cuts) >= 6
+
+
+def test_front_door_opens_onto_the_centre_compartment():
+    p = build_cabinet()
+    door = [b for b in p.boards if "(door)" in b.name]
+    assert len(door) == 4 and sum(b.name.startswith("Door batten") for b in p.boards) == 2
+    wall = next(b for b in p.boards if b.name == "Front wall S3")
+    assert any(o["op"] == "cut" for o in wall.shape)                     # the opening the door covers
+    assert any("Push-to-open" in h["item"] for h in p.hardware)           # nothing visible on the front
+    assert not any(o["k"] == "cyl" and o["op"] == "cut" for b in door for o in b.shape)    # no hole, no pull
+    bar = build_cabinet(door_pull="bar")
+    assert any(b.name == "Door pull bar" for b in bar.boards) and bar.overall()[1] > 22.5
+    assert all(b.rot is None for b in door)                              # closed by default
+    opened = build_cabinet(door_open_deg=90)
+    assert all(b.rot and b.rot["deg"] == -90 for b in opened.boards if "(door)" in b.name or b.name.startswith("Door batten"))
+    assert opened.overall()[1] > 22.5 + 8                                # swings outward, clear of the front
+    assert not any("(door)" in b.name for b in build_cabinet(door=False).boards)
 
 
 def test_open_pose_rotates_the_lids_and_still_fits():
@@ -114,7 +131,7 @@ def test_stl_winding_is_outward_for_boxes_arcs_and_cylinders():
         a, b, c = v[i], v[i + 1], v[i + 2]
         vol += (a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0])) / 6
     assert vol > 3000 and vol == pytest.approx(mesh_volume(p), rel=1e-6)
-    assert skipped_cuts(p) == 5                       # this fallback leaves cuts out and says so
+    assert skipped_cuts(p) == 6                       # this fallback leaves cuts out and says so
     assert to_obj(p).count("\no ") > 80
 
 
@@ -148,6 +165,10 @@ def test_bad_params_are_explained():
         build_cabinet(center_h=30)
     with pytest.raises(ValueError, match="base_z"):
         build_cabinet(base_z=2.0)
+    with pytest.raises(ValueError, match="door_pull"):
+        build_cabinet(door_pull="knob")
+    with pytest.raises(ValueError, match="door_open_deg"):
+        build_cabinet(door_open_deg=200)
     with pytest.raises(ValueError, match="foot_arm"):
         build_cabinet(foot_arm=3.5)
 

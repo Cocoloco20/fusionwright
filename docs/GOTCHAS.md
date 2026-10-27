@@ -19,6 +19,7 @@ Each of these cost a failed test before it was understood. They are baked into t
 | Each tool call must finish fast | add-ins run code on the main thread | chunk big builds (this project builds a handful of parts per call) |
 | A sketch on the XZ plane extrudes the wrong way or lands mirrored | the plane normal and the sketch axes depend on the document's orientation | place points with `sketch.modelToSketchSpace`, and pick `Positive`/`Negative` extent from the sign of `plane.geometry.normal` (done in `BUILD`) |
 | Rotating a part inside its component moves the wrong thing | the component's own origin stays put | build in model coordinates inside an identity-transform occurrence, then set `occurrence.transform2` to a rotation about the hinge line |
+| A hinge pose set while building silently vanishes | the next recompute resets an occurrence transform | apply every pose in one pass after all parts are built (`POSE`) |
 | `fusion_render` came out black | the camera was left under the model by the last `bottom` look | set an iso view with `fusion_look` right before rendering |
 | `list[Any]` return type of an MCP tool fails to serialize `Image` | structured-output schema | annotate as `list[str | Image]` |
 

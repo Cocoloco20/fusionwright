@@ -16,10 +16,13 @@ column "Certainty" says how sure the reading is.
 | 8 | Slat panel stops above the floor; a band between the feet in the frontal and lateral views | oak apron on all four sides between the feet | high |
 | 9 | Four L-shaped corner feet in plan view, each with a circle (wheel) inside | each foot is two oak walls forming an L plus a top plate; a swivel caster (plate, swivel, two fork plates, wheel) is hidden inside | high |
 | 10 | Inset drawing: wheel mounted under a plate | caster plate screwed under the foot top plate; wheel clears the floor line by design | high |
-| 11 | Small notch at the front of the top strip | half-round finger notch in the centre lid | low |
+| 11 | A framed panel of vertical bars under the scoop in the 3/4 view (a door in the middle of the front) | front door: the four centre slats on two oak battens, hinged on the left (2 butt hinges), push-to-open with a hidden magnetic latch so nothing shows on the front (`door_pull="bar"` adds a slim vertical pull instead), opening onto the centre compartment through a 6 3/4 in wide opening in the plywood front wall; `door=False` removes it, `door_open_deg=90` shows it open | medium |
+| 12 | Small notch at the front of the top strip | half-round finger notch in the centre lid | low |
 
 Not in the sketch (my engineering proposal, flagged in `project.notes`): the plywood carcass behind the slats, the
 dividers, lid hinges (2 per lid), apron height, caster size, and the exact finger-opening shapes.
+
+The other four compartments are reached through their lids; the sketch shows no other door.
 
 Questions worth confirming with the designer before cutting wood: (a) is the scoop also cut in the back? (default
 yes, `arc_on_back=False` for a plain back), (b) are the tilted blocks open lids, (c) do the dark squares/wedges mean

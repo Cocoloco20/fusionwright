@@ -159,7 +159,7 @@ def _make_op(comp, o, body):
         sk.sketchCurves.sketchLines.addByTwoPoints(_pt(sk, _to3(pl, cur[0], cur[1], a)), _pt(sk, _to3(pl, start[0], start[1], a)))
     return _extrude(comp, sk, a, b, s, op, body)
 
-made, skipped, rotated = 0, 0, 0
+made, skipped = 0, 0
 for b in boards[start:end]:
     if b['name'] in existing:
         skipped += 1
@@ -177,19 +177,30 @@ for b in boards[start:end]:
     ap = aps.get(b['material'])
     if ap is not None:
         body.appearance = ap
-    r = b.get('rot')
-    if r:
-        m = adsk.core.Matrix3D.create()
-        m.setToRotation(math.radians(r['deg']), adsk.core.Vector3D.create(*r['ax']),
-                        P3(r['o'][0] * IN, r['o'][1] * IN, r['o'][2] * IN))
-        try:
-            occ.transform2 = m
-        except Exception:
-            occ.transform = m
-        rotated += 1
     made += 1
-result = {'made': made, 'skipped_existing': skipped, 'rotated': rotated, 'occurrences': root.occurrences.count,
+result = {'made': made, 'skipped_existing': skipped, 'occurrences': root.occurrences.count,
           'appearances_applied': sorted(aps)}
+'''
+
+POSE = r'''
+# Hinge poses are applied in a separate pass AFTER every part is built: an occurrence transform set while
+# features are still being added is dropped by the next recompute.
+n = 0
+for item in ARGS['rots']:
+    occ = next((o for o in root.occurrences if o.component.name == item['name']), None)
+    if occ is None:
+        continue
+    r = item['rot']
+    m = adsk.core.Matrix3D.create()
+    m.setToRotation(math.radians(r['deg']), adsk.core.Vector3D.create(*r['ax']),
+                    P3(r['o'][0] * IN, r['o'][1] * IN, r['o'][2] * IN))
+    try:
+        occ.transform2 = m
+    except Exception:
+        occ.transform = m
+    n += 1
+adsk.doEvents()
+result = {'posed': n}
 '''
 
 CUTS = r'''

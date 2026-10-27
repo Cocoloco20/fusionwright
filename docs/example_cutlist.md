@@ -14,8 +14,9 @@
 | 2 | White oak (solid) | 1/2" | 1 7/8" | 15" | Apron front, Apron back |
 | 2 | White oak (solid) | 1/2" | 1 7/8" | 13 1/2" | Apron left, Apron right |
 | 4 | White oak (solid) | 1/2" | 2 1/4" | 13 1/8" | Slat front 03, Slat front 08, Slat back 03 +1 more |
-| 4 | White oak (solid) | 1/2" | 2 1/4" | 11 3/4" | Slat front 04, Slat front 07, Slat back 04 +1 more |
-| 4 | White oak (solid) | 1/2" | 2 1/4" | 11" | Slat front 05, Slat front 06, Slat back 05 +1 more |
+| 4 | White oak (solid) | 1/2" | 2 1/4" | 11 3/4" | Slat front 04 (door), Slat front 07 (door), Slat back 04 +1 more |
+| 4 | White oak (solid) | 1/2" | 2 1/4" | 11" | Slat front 05 (door), Slat front 06 (door), Slat back 05 +1 more |
+| 2 | White oak (solid) | 1/2" | 1 1/2" | 6 5/8" | Door batten low, Door batten high |
 | 1 | Birch plywood | 3/4" | 21 1/2" | 23" | Bottom panel |
 | 2 | Birch plywood | 3/4" | 19 1/4" | 20" | End wall left, End wall right |
 | 2 | Birch plywood | 3/4" | 14 1/4" | 20" | Divider D1, Divider D4 |
@@ -24,7 +25,7 @@
 | 4 | Birch plywood | 3/4" | 3 3/4" | 14 1/4" | Front wall S2, Back wall S2, Front wall S4 +1 more |
 | 2 | Birch plywood | 3/4" | 7 1/2" | 9 1/4" | Front wall S3, Back wall S3 |
 
-**Solid lumber:** 9.2 board feet net, buy about 10.6 bf (+15% waste).
+**Solid lumber:** 9.27 board feet net, buy about 10.7 bf (+15% waste).
 **Sheet goods:** 19.9 sq ft net (see the nesting layout for sheets to buy).
 
 ## Hardware
@@ -36,10 +37,13 @@
 | 2 | Butt hinge 2 in | Lid S3 |
 | 2 | Butt hinge 2 in | Lid S4 |
 | 2 | Butt hinge 2 in | Lid S5 |
+| 2 | Butt hinge 1-1/2 in (door, on the left edge) | Front door |
+| 1 | Push-to-open latch, magnetic, hidden behind the door (door) | Front door |
 | 4 | Swivel caster, 2.5 in overall height (2 locking) | feet |
 
 ## Notes
 
+- Front door: the framed panel under the scoop in the 3/4 view is read as an access door to the centre compartment (four slats on two battens, hinged on the left, push-to-open so nothing shows on the front). The other compartments open through their lids. Set door=False for no door, door_open_deg=90 to show it open.
 - Read from the sketch: arc-cut slat tops, five lids at 24/19/14 in, stepped boxes, L-shaped corner feet hiding four casters (plate screwed under a top plate), slats stopping above the floor on an apron.
 - Interpretations to confirm with the designer: the dark squares (tower fronts) and dark wedges (step fronts) are modelled as finger openings through the plywood front wall; the tilted blocks in the 3/4 view are the lids shown open (use open_deg); the scoop is cut in both the front and the back skin (arc_on_back).
 - My proposal, not in the sketch: plywood carcass, dividers, lid hinges at the back, centre-lid finger notch, apron height, caster size.

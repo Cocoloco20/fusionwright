@@ -4,6 +4,8 @@ What the sketch shows and this generator models:
   * 24" W x 24" H x 22.5" D, vertical oak slats on all four sides (10 across front/back, 6 per side)
   * a large circular scoop: the front (and, by default, back) slat tops follow one arc from the two top corners
     down to the centre height, so the slats are real arc-cut parts
+  * a hinged front door in the middle section (the framed panel under the scoop in the 3/4 view): the four centre
+    slats on two oak battens, hinged on the left, push-to-open (no visible pull), opening onto the centre compartment
   * five hinged lids/doors side by side at three heights: towers 24", steps 19", centre 14"
   * stepped plywood carcass behind the slats; the carcass boxes stand proud of the arc; dark square openings on the
     tower fronts and dark wedge openings on the step fronts act as the finger pulls
@@ -50,6 +52,9 @@ def build_cabinet(
     arc_on_back: bool = True,
     open_deg: float = 0.0,
     open_sections: tuple[int, ...] = (0, 1, 3, 4),
+    door: bool = True,
+    door_open_deg: float = 0.0,
+    door_pull: str = "push",
     name: str = "Rolling oak slat cabinet",
 ) -> Project:
     inner_w = width - 2 * skin_t
@@ -74,6 +79,10 @@ def build_cabinet(
         raise ValueError(f"foot_arm must be at least {cs + 1.0} in so the L walls hide the caster.")
     if not 1 <= front_slats <= 40 or not 1 <= side_slats <= 40:
         raise ValueError("front_slats and side_slats must be between 1 and 40.")
+    if door_pull not in ("push", "bar"):
+        raise ValueError("door_pull must be 'push' (push-to-open, nothing visible) or 'bar' (slim vertical pull).")
+    if not 0.0 <= door_open_deg <= 120.0:
+        raise ValueError("door_open_deg must be between 0 and 120 degrees (0 = closed).")
 
     # scoop arc through the two top corners, lowest at the centre
     half, sag = width / 2, tower_h - center_h
@@ -102,7 +111,8 @@ def build_cabinet(
         params=dict(width=width, depth=depth, tower_h=tower_h, step_h=step_h, center_h=center_h, skin_t=skin_t,
                     front_slats=front_slats, side_slats=side_slats, slat_gap=slat_gap, ply_t=ply_t, lid_t=lid_t,
                     base_z=base_z, caster_h=caster_h, plate_t=plate_t, foot_arm=foot_arm, foot_t=foot_t,
-                    foot_clear=foot_clear, apron_z=apron_z, arc_on_back=arc_on_back, open_deg=open_deg,
+                    foot_clear=foot_clear, apron_z=apron_z, arc_on_back=arc_on_back, open_deg=open_deg, door=door,
+                    door_open_deg=door_open_deg, door_pull=door_pull,
                     section_widths=[round(w, 4) for w in section_widths], scoop_radius=round(R, 4),
                     scoop_sag=sag),
     )
@@ -110,6 +120,8 @@ def build_cabinet(
 
     def box_board(nm, group, mat, x, y, z, sx, sy, sz, grain="z", note=""):
         add(Board(nm, group, mat, x, y, z, sx, sy, sz, grain, None, None, note))
+
+    door_open_box: dict[str, float] = {}
 
     # ---------------------------------------------------------------- plywood carcass (my proposal)
     box_board("Bottom panel", "bottom panel", PLY, skin_t, skin_t, base_z, inner_w, inner_d, ply_t, "x")
@@ -124,6 +136,12 @@ def build_cabinet(
                 top = wall_top - 0.9
                 ops.append(sh.box(cx - s / 2, y0 - 0.05, top - s, s, ply_t + 0.1, s, "cut"))
                 note = "1-3/4 in square finger opening"
+            elif side == "Front" and i == 2 and door:              # access opening behind the front door
+                ox0, ox1 = sx0 + 0.4, sx0 + sw - 0.4
+                oz0, oz1 = carcass_z + 0.5, wall_top - 0.75
+                ops.append(sh.box(ox0, y0 - 0.05, oz0, ox1 - ox0, ply_t + 0.1, oz1 - oz0, "cut"))
+                note = "door opening, 6-3/4 in wide"
+                door_open_box.update(x0=ox0, x1=ox1, z0=oz0, z1=oz1)
             elif side == "Front" and i in (1, 3):                  # wedge opening on the step boxes
                 m, zt = 0.5, wall_top - 0.5
                 xa, xb = sx0 + m, sx0 + sw - m
@@ -159,6 +177,16 @@ def build_cabinet(
 
     # ---------------------------------------------------------------- vertical oak slats, four sides
     sw_x, pitch_x = _slats(width, front_slats, slat_gap)
+    # front slats whose centre falls inside the centre section form the door
+    door_js = [j for j in range(front_slats)
+               if door and x_edges[2] < j * pitch_x + sw_x / 2 < x_edges[3]]
+    if door and not door_js:
+        raise ValueError("The centre section is too narrow for a door: use fewer front_slats or a wider section.")
+    door_x0 = door_js[0] * pitch_x if door_js else 0.0
+    door_x1 = door_js[-1] * pitch_x + sw_x if door_js else 0.0
+    door_rot = None
+    if door_js and door_open_deg:                     # swing outward about the front-left corner (right-hand about +Z)
+        door_rot = {"o": [door_x0, 0.0, 0.0], "ax": [0.0, 0.0, 1.0], "deg": -float(door_open_deg)}
     for side, ya, yb, arc in (("front", 0.0, skin_t, True), ("back", depth - skin_t, depth, arc_on_back)):
         for j in range(front_slats):
             x0 = j * pitch_x
@@ -171,8 +199,28 @@ def build_cabinet(
             else:
                 path = sh.polygon([(x0, base_z), (x1, base_z), (x1, tower_h), (x0, tower_h)])
                 note = ""
-            add(Board.from_shape(f"Slat {side} {j + 1:02d}", f"{side} slat", OAK, [sh.prism("xz", path, ya, yb)],
-                                 None, "z", note))
+            ops = [sh.prism("xz", path, ya, yb)]
+            rot, label = None, f"Slat {side} {j + 1:02d}"
+            if side == "front" and j in door_js:
+                rot, label = door_rot, f"Slat front {j + 1:02d} (door)"
+                note += "; part of the front door"
+            add(Board.from_shape(label, f"{side} slat", OAK, ops, rot, "z", note))
+    if door_js:
+        bx0, bx1 = door_open_box["x0"] + 0.05, door_open_box["x1"] - 0.05      # battens sit inside the opening
+        for k, (zc, nm) in enumerate(((door_open_box["z0"] + 1.0, "low"), (door_open_box["z1"] - 1.0, "high"))):
+            add(Board.from_shape(f"Door batten {nm}", "door batten", OAK,
+                                 [sh.box(bx0, skin_t, zc - 0.75, bx1 - bx0, 0.5, 1.5)], door_rot, "x",
+                                 "ties the four door slats together; fasten from the back"))
+        p.hardware.append({"item": "Butt hinge 1-1/2 in (door, on the left edge)", "qty": 2, "for": "Front door"})
+        if door_pull == "bar":                        # slim vertical oak pull on the free edge (adds 1/2 in of depth)
+            zc = (door_open_box["z0"] + door_open_box["z1"]) / 2
+            add(Board.from_shape("Door pull bar", "door pull", OAK,
+                                 [sh.box(door_x1 - 1.0, -0.5, zc - 3.0, 0.5, 0.5, 6.0)], door_rot, "z",
+                                 "slim vertical grab bar, screwed from the back of the slats; adds 1/2 in to the depth"))
+            p.hardware.append({"item": "Magnetic catch (door)", "qty": 1, "for": "Front door"})
+        else:                                         # push-to-open: no visible pull at all
+            p.hardware.append({"item": "Push-to-open latch, magnetic, hidden behind the door (door)", "qty": 1,
+                               "for": "Front door"})
     sw_y, pitch_y = _slats(inner_d, side_slats, slat_gap)
     for side, xa in (("left", 0.0), ("right", width - skin_t)):
         for j in range(side_slats):
@@ -220,6 +268,9 @@ def build_cabinet(
     p.hardware.append({"item": f"Swivel caster, {caster_h} in overall height (2 locking)", "qty": 4, "for": "feet"})
 
     p.notes += [
+        "Front door: the framed panel under the scoop in the 3/4 view is read as an access door to the centre compartment "
+        "(four slats on two battens, hinged on the left, push-to-open so nothing shows on the front). The other compartments open through their lids. "
+        "Set door=False for no door, door_open_deg=90 to show it open.",
         "Read from the sketch: arc-cut slat tops, five lids at 24/19/14 in, stepped boxes, L-shaped corner feet hiding "
         "four casters (plate screwed under a top plate), slats stopping above the floor on an apron.",
         "Interpretations to confirm with the designer: the dark squares (tower fronts) and dark wedges (step fronts) "
