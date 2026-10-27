@@ -4,9 +4,9 @@ What the sketch shows and this generator models:
   * 24" W x 24" H x 22.5" D, vertical oak slats on all four sides (10 across front/back, 6 per side)
   * a large circular scoop: the front (and, by default, back) slat tops follow one arc from the two top corners
     down to the centre height, so the slats are real arc-cut parts
-  * a pair of hinged front doors across the middle three sections (the framed panel under the scoop in the 3/4
-    view), two hinges per door on the outer edges, push-to-open (no visible pull), opening onto one large bay that
-    holds a single pull-out drawer
+  * a pair of hinged front doors across the whole front between two fixed corner slats (the framed panel under the
+    scoop in the 3/4 view), two hinges per door on the outer edges, push-to-open (no visible pull), opening onto one
+    large bay that holds a single wide pull-out drawer
   * five hinged lids/doors side by side at three heights: towers 24", steps 19", centre 14"
   * stepped plywood carcass behind the slats; the carcass boxes stand proud of the arc; dark square openings on the
     tower fronts and dark wedge openings on the step fronts act as the finger pulls
@@ -57,7 +57,7 @@ def build_cabinet(
     door_open_deg: float = 0.0,
     door_pull: str = "push",
     door_leaves: int = 2,
-    door_span: str = "wide",
+    door_span: str = "full",
     drawer: bool = True,
     drawer_out: float = 0.0,
     drawer_depth: float = 18.0,
@@ -89,9 +89,9 @@ def build_cabinet(
         raise ValueError("door_pull must be 'push' (push-to-open, nothing visible) or 'bar' (slim vertical pull).")
     if not 0.0 <= door_open_deg <= 120.0:
         raise ValueError("door_open_deg must be between 0 and 120 degrees (0 = closed).")
-    if door_span not in ("wide", "centre"):
-        raise ValueError("door_span must be 'wide' (doors and drawer across the centre and both step sections, the "
-                         "default) or 'centre' (only the centre section).")
+    if door_span not in ("full", "wide", "centre"):
+        raise ValueError("door_span must be 'full' (doors and drawer across the whole front between two corner slats, "
+                         "the default), 'wide' (centre and both step sections) or 'centre' (centre section only).")
     if door_leaves not in (1, 2):
         raise ValueError("door_leaves must be 2 (a pair of doors, the default) or 1 (a single door hinged on the left).")
     if not 6.0 <= drawer_depth <= 20.0:
@@ -116,9 +116,14 @@ def build_cabinet(
     for w in section_widths:
         x_edges.append(x_edges[-1] + w)
     y_front, y_back = skin_t, depth - skin_t        # inside faces of the front / back skin
-    wide = bool(door) and door_span == "wide"
-    sec_a, sec_b = (1, 3) if wide else (2, 2)       # first / last section behind the doors
+    sec_a, sec_b = {"full": (0, 4), "wide": (1, 3), "centre": (2, 2)}[door_span]   # first / last section behind the doors
+    merged = bool(door) and door_span != "centre"   # one front panel and one drawer bay across several sections
     x_lo, x_hi = x_edges[sec_a], x_edges[sec_b + 1]
+    sw_x, pitch_x = _slats(width, front_slats, slat_gap)
+    # the bay runs between the end walls (full) or between the tower dividers (wide); slides sit on those faces
+    bay_lo = x_edges[sec_a] + (ply_t if sec_a == 0 else ply_t / 2)
+    bay_hi = x_edges[sec_b + 1] - (ply_t if sec_b == 4 else ply_t / 2)
+    bay_top = heights[2] - lid_t
     carcass_z = base_z + ply_t
 
     p = Project(
@@ -147,28 +152,36 @@ def build_cabinet(
 
     # ---------------------------------------------------------------- plywood carcass (my proposal)
     box_board("Bottom panel", "bottom panel", PLY, skin_t, skin_t, base_z, inner_w, inner_d, ply_t, "x")
-    if wide:                                        # one front wall across the centre and both step sections
+    if merged:                                      # one front wall across all the sections behind the doors
         tops = [heights[i] - lid_t for i in range(5)]
-        pts = [(x_edges[1], carcass_z), (x_edges[4], carcass_z), (x_edges[4], tops[3]), (x_edges[3], tops[3]),
-               (x_edges[3], tops[2]), (x_edges[2], tops[2]), (x_edges[2], tops[1]), (x_edges[1], tops[1])]
+        pts = [(x_edges[sec_a], carcass_z), (x_edges[sec_b + 1], carcass_z)]
+        for i in range(sec_b, sec_a - 1, -1):       # stepped top edge, right to left
+            pts += [(x_edges[i + 1], tops[i]), (x_edges[i], tops[i])]
         ops = [sh.prism("xz", sh.polygon(pts), y_front, y_front + ply_t)]
-        ox0, ox1 = x_lo + 0.4, x_hi - 0.4
+        if door_span == "full":                     # leave one corner slat plus plywood stile each side for the hinges
+            ox0, ox1 = pitch_x + 0.1, width - pitch_x - 0.1
+        else:
+            ox0, ox1 = x_lo + 0.4, x_hi - 0.4
         oz0, oz1 = carcass_z + 0.5, tops[2] - 0.75
         ops.append(sh.box(ox0, y_front - 0.05, oz0, ox1 - ox0, ply_t + 0.1, oz1 - oz0, "cut"))
         door_open_box.update(x0=ox0, x1=ox1, z0=oz0, z1=oz1)
-        for i in (1, 3):                            # the wedge finger openings stay on the step sections
-            zt = tops[i] - 0.5
-            xa, xb = x_edges[i] + 0.5, x_edges[i + 1] - 0.5
-            wp = ([(xa, zt), (xb, zt), (xb, zt - 1.5), (xa, zt - 0.4)] if i == 1
-                  else [(xa, zt), (xb, zt), (xb, zt - 0.4), (xa, zt - 1.5)])
-            ops.append(sh.prism("xz", sh.polygon(wp), y_front - 0.05, y_front + ply_t + 0.05, "cut"))
-        add(Board.from_shape("Front wall S2-S4", "front wall", PLY, ops, None, "x",
-                             f"one panel across the three middle sections; {ox1 - ox0:.1f} in wide door opening for "
-                             "the doors and drawer, wedge finger openings above"))
+        for i in range(sec_a, sec_b + 1):           # the finger openings stay on the tower and step sections
+            if i in (0, 4):
+                s_, cxm = 1.75, x_edges[i] + section_widths[i] / 2
+                ops.append(sh.box(cxm - s_ / 2, y_front - 0.05, tops[i] - 0.9 - s_, s_, ply_t + 0.1, s_, "cut"))
+            elif i in (1, 3):
+                zt = tops[i] - 0.5
+                xa, xb = x_edges[i] + 0.5, x_edges[i + 1] - 0.5
+                wp = ([(xa, zt), (xb, zt), (xb, zt - 1.5), (xa, zt - 0.4)] if i == 1
+                      else [(xa, zt), (xb, zt), (xb, zt - 0.4), (xa, zt - 1.5)])
+                ops.append(sh.prism("xz", sh.polygon(wp), y_front - 0.05, y_front + ply_t + 0.05, "cut"))
+        add(Board.from_shape(f"Front wall S{sec_a + 1}-S{sec_b + 1}", "front wall", PLY, ops, None, "x",
+                             f"one panel across sections {sec_a + 1}-{sec_b + 1}; {ox1 - ox0:.1f} in wide door opening "
+                             "for the doors and drawer, finger openings above"))
     for i in range(5):
         wall_top = heights[i] - lid_t
         for side, y0 in (("Front", y_front), ("Back", y_back - ply_t)):
-            if wide and side == "Front" and i in (1, 2, 3):
+            if merged and side == "Front" and sec_a <= i <= sec_b:
                 continue
             sx0, sw = x_edges[i], section_widths[i]
             ops = [sh.box(sx0, y0, carcass_z, sw, ply_t, wall_top - carcass_z)]
@@ -178,7 +191,7 @@ def build_cabinet(
                 top = wall_top - 0.9
                 ops.append(sh.box(cx - s / 2, y0 - 0.05, top - s, s, ply_t + 0.1, s, "cut"))
                 note = "1-3/4 in square finger opening"
-            elif side == "Front" and i == 2 and door and not wide:  # access opening behind the front door
+            elif side == "Front" and i == 2 and door and not merged:  # access opening behind the front door
                 ox0, ox1 = sx0 + 0.4, sx0 + sw - 0.4
                 oz0, oz1 = carcass_z + 0.5, wall_top - 0.75
                 ops.append(sh.box(ox0, y0 - 0.05, oz0, ox1 - ox0, ply_t + 0.1, oz1 - oz0, "cut"))
@@ -198,18 +211,21 @@ def build_cabinet(
     box_board("End wall right", "end wall", PLY, width - skin_t - ply_t, y_front + ply_t, carcass_z, ply_t, wall_d,
               end_h, "y")
     for k in range(1, 5):
-        if wide and k in (2, 3):                    # the drawer bay runs through the middle: no dividers inside it
+        div_top = min(heights[k - 1], heights[k]) - lid_t
+        z_lo = carcass_z
+        if merged and sec_a <= k - 1 and k <= sec_b:  # inside the drawer bay: only the part above the shelves is kept
+            z_lo = bay_top
+        if div_top - z_lo < 0.5:
             continue
-        div_h = min(heights[k - 1], heights[k]) - lid_t - carcass_z
-        box_board(f"Divider D{k}", "divider", PLY, x_edges[k] - ply_t / 2, y_front + ply_t, carcass_z, ply_t, wall_d,
-                  div_h, "y")
+        box_board(f"Divider D{k}", "divider", PLY, x_edges[k] - ply_t / 2, y_front + ply_t, z_lo, ply_t, wall_d,
+                  div_top - z_lo, "y")
 
-    if wide:                                        # shelves over the drawer bay roof the step compartments
-        bay_top = heights[2] - lid_t
-        for nm, xa, xb in (("Bay shelf S2", x_edges[1] + ply_t / 2, x_edges[2]),
-                           ("Bay shelf S4", x_edges[3], x_edges[4] - ply_t / 2)):
-            box_board(nm, "shelf", PLY, xa, y_front + ply_t, bay_top - ply_t, xb - xa, wall_d, ply_t, "x",
-                      "floor of the step compartment above, roof of the drawer bay")
+    if merged:                                      # shelves roof the drawer bay and floor the compartments above it
+        for nm, xa, xb in (("Bay shelf left", bay_lo, x_edges[2]), ("Bay shelf right", x_edges[3], bay_hi)):
+            if xb - xa > 0.5:
+                box_board(nm, "shelf", PLY, xa, y_front + ply_t, bay_top - ply_t, xb - xa, wall_d, ply_t, "x",
+                          "roof of the drawer bay, floor of the compartments above; rest it on cleats screwed to the "
+                          "front, back and divider walls")
 
     # ---------------------------------------------------------------- hinged lids / doors (hinged at the back)
     for i in range(5):
@@ -227,10 +243,10 @@ def build_cabinet(
         p.hardware.append({"item": "Butt hinge 2 in", "qty": 2, "for": f"Lid {labels[i][:2]}"})
 
     # ---------------------------------------------------------------- vertical oak slats, four sides
-    sw_x, pitch_x = _slats(width, front_slats, slat_gap)
-    # front slats whose centre falls inside the door span form the door(s)
+    # front slats whose centre falls inside the door span form the door(s); in 'full' the corner slats stay fixed
+    sel_lo, sel_hi = (x_lo + pitch_x, x_hi - pitch_x) if door_span == "full" else (x_lo, x_hi)
     door_js = [j for j in range(front_slats)
-               if door and x_lo < j * pitch_x + sw_x / 2 < x_hi]
+               if door and sel_lo < j * pitch_x + sw_x / 2 < sel_hi]
     if door and not door_js:
         raise ValueError("The door span is too narrow for a door: use fewer front_slats or a wider section.")
     if door and door_leaves == 2 and len(door_js) < 2:
@@ -300,12 +316,12 @@ def build_cabinet(
     # ---------------------------------------------------------------- pull-out drawer behind the doors
     if door_js and drawer:
         t_d = 0.5                                                     # drawer sides / front / back (solid oak)
-        cx_c = (x_lo + x_hi) / 2
-        dw = (x_hi - x_lo - ply_t) - 1.0                              # 1/2 in each side for the slides
+        cx_c = (bay_lo + bay_hi) / 2
+        dw = (bay_hi - bay_lo) - 1.0                                  # 1/2 in each side for the slides
         # doors standing open at 90 deg reach 1 in in front of their hinge edge: keep the drawer clear of them
         reach = 1.0 + 0.05
-        left_lim = next((lf["x0"] + reach for lf in leaves if lf["hinge"] == "left"), x_lo)
-        right_lim = next((lf["x1"] - reach for lf in leaves if lf["hinge"] == "right"), x_hi)
+        left_lim = next((lf["x0"] + reach for lf in leaves if lf["hinge"] == "left"), bay_lo)
+        right_lim = next((lf["x1"] - reach for lf in leaves if lf["hinge"] == "right"), bay_hi)
         half_w = min(dw / 2, cx_c - left_lim, right_lim - cx_c)
         dw = 2 * half_w
         dx0 = cx_c - dw / 2
@@ -317,7 +333,7 @@ def build_cabinet(
         front_ops = [sh.box(dx0, dy0, dz0, dw, t_d, dh),
                      sh.box(cx_c - 2.0, dy0 - 0.05, dz0 + dh - 0.75, 4.0, 0.3, 0.8, "cut")]    # finger notch, top edge
         add(Board.from_shape("Drawer front", "drawer", OAK, front_ops, None, "x",
-                             "hidden behind the doors; 4 in finger notch in the top edge instead of a handle"))
+                             "hidden behind the doors; finger notch in the top edge instead of a handle"))
         box_board("Drawer back", "drawer", OAK, dx0, dy0 + drawer_depth - t_d, dz0, dw, t_d, dh, "x")
         for sd, xs in (("left", dx0), ("right", dx0 + dw - t_d)):
             box_board(f"Drawer side {sd}", "drawer", OAK, xs, dy0 + t_d, dz0, t_d, drawer_depth - 2 * t_d, dh, "y")
@@ -373,11 +389,12 @@ def build_cabinet(
 
     p.notes += [
         "Front doors: the framed panel under the scoop in the 3/4 view is a pair of doors with two hinges per door on "
-        "the outer edges, push-to-open so nothing shows on the front. With door_span='wide' (default) they span the "
-        "centre and both step sections, so the doors open onto one big bay holding a single pull-out drawer on 18 in "
-        "full-extension slides, and the step lids open onto compartments above the bay. door_span='centre' keeps the "
-        "doors and drawer to the centre section only; door_leaves=1 gives a single door, door=False none, "
-        "drawer=False an empty bay; door_open_deg=90 and drawer_out=12 show it open.",
+        "the outer edges, push-to-open so nothing shows on the front. With door_span='full' (default) they span the "
+        "whole front between a fixed corner slat on each side, onto one big bay holding a single wide pull-out drawer "
+        "on 18 in full-extension slides; shelves over the bay roof the tower and step compartments above it, which "
+        "still open through their lids. door_span='wide' limits it to the centre and step sections, 'centre' to the "
+        "centre section; door_leaves=1 gives a single door, door=False none, drawer=False an empty bay; "
+        "door_open_deg=90 and drawer_out=12 show it open.",
         "Read from the sketch: arc-cut slat tops, five lids at 24/19/14 in, stepped boxes, L-shaped corner feet hiding "
         "four casters (plate screwed under a top plate), slats stopping above the floor on an apron.",
         "Interpretations to confirm with the designer: the dark squares (tower fronts) and dark wedges (step fronts) "

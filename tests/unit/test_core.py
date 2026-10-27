@@ -43,19 +43,20 @@ def test_sketch_details_are_present():
     assert sum(n.endswith("wheel") for n in names) == 4 and sum(n.endswith("top plate") for n in names) == 4
     # wedge and square openings are cuts through the plywood fronts
     cuts = [b for b in p.boards if b.shape and any(o["op"] == "cut" for o in b.shape)]
-    assert len(cuts) >= 5
+    assert len(cuts) >= 3
 
 
 def test_front_doors_open_onto_the_centre_compartment_with_a_drawer():
     p = build_cabinet()
     doors = [b for b in p.boards if "(door" in b.name]
-    assert len(doors) == 6 and sum(b.name.startswith("Door") and "batten" in b.name for b in p.boards) == 4
-    assert {b.name.split("(")[1] for b in doors} == {"door L)", "door R)"}          # two leaves, three slats each
-    wall = next(b for b in p.boards if b.name == "Front wall S2-S4")      # one panel across centre + both steps
+    assert len(doors) == 8 and sum(b.name.startswith("Door") and "batten" in b.name for b in p.boards) == 4
+    assert {b.name.split("(")[1] for b in doors} == {"door L)", "door R)"}          # two leaves, four slats each
+    wall = next(b for b in p.boards if b.name == "Front wall S1-S5")      # one panel across the whole front
     assert any(o["op"] == "cut" for o in wall.shape)                     # the opening the doors cover
     assert not any(b.name in ("Divider D2", "Divider D3") for b in p.boards)       # the bay runs through the middle
-    assert {b.name for b in p.boards if b.group == "shelf"} == {"Bay shelf S2", "Bay shelf S4"}
+    assert {b.name for b in p.boards if b.group == "shelf"} == {"Bay shelf left", "Bay shelf right"}
     narrow = build_cabinet(door_span="centre")
+    assert len([b for b in build_cabinet(door_span="wide").boards if "(door" in b.name]) == 6
     assert len([b for b in narrow.boards if "(door" in b.name]) == 4 and any(b.name == "Divider D2" for b in narrow.boards)
     assert next(b for b in p.boards if b.name == "Drawer front").sx > 3 * next(b for b in narrow.boards if b.name == "Drawer front").sx / 1.5
     hinge = next(h for h in p.hardware if "Butt hinge 1-1/2" in h["item"])
@@ -79,7 +80,7 @@ def test_front_doors_open_onto_the_centre_compartment_with_a_drawer():
     out_front = next(b for b in opened.boards if b.name == "Drawer front")
     assert out_front.y == pytest.approx(next(b for b in p.boards if b.name == "Drawer front").y - 12)
     assert not any("(door" in b.name for b in build_cabinet(door=False).boards)
-    assert len([b for b in build_cabinet(door_leaves=1).boards if "(door)" in b.name]) == 6
+    assert len([b for b in build_cabinet(door_leaves=1).boards if "(door)" in b.name]) == 8
     assert not any(b.group == "drawer" for b in build_cabinet(drawer=False).boards)
 
 

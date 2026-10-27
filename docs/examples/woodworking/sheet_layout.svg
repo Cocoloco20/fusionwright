@@ -4,26 +4,26 @@
 <rect x="24.0" y="40" width="288.0" height="576.0" fill="#f6f1e4" stroke="#222" stroke-width="1.5"/>
 <rect x="24.0" y="40.0" width="129.0" height="138.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
 <text x="27.0" y="51.0" font-size="8" fill="#3a2f12">Bottom panel</text>
-<rect x="153.8" y="40.0" width="115.5" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<text x="156.8" y="51.0" font-size="8" fill="#3a2f12">End wall left</text>
+<rect x="153.8" y="40.0" width="115.5" height="138.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="156.8" y="51.0" font-size="8" fill="#3a2f12">Front wall S1-S5</text>
 <rect x="24.0" y="178.8" width="115.5" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<text x="27.0" y="189.8" font-size="8" fill="#3a2f12">End wall right</text>
-<rect x="140.2" y="178.8" width="85.5" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<text x="143.2" y="189.8" font-size="8" fill="#3a2f12">Divider D1</text>
-<rect x="226.5" y="178.8" width="85.5" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<text x="229.5" y="189.8" font-size="8" fill="#3a2f12">Divider D4</text>
-<rect x="270.0" y="40.0" width="20.2" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<rect x="291.0" y="40.0" width="20.2" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<rect x="24.0" y="299.5" width="24.0" height="115.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<rect x="48.8" y="299.5" width="24.0" height="115.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<rect x="73.5" y="299.5" width="24.0" height="115.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<rect x="98.2" y="299.5" width="24.0" height="115.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<rect x="123.0" y="299.5" width="67.4" height="102.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<text x="126.0" y="310.5" font-size="8" fill="#3a2f12">Drawer bottom</text>
-<rect x="191.2" y="299.5" width="85.5" height="90.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<text x="194.2" y="310.5" font-size="8" fill="#3a2f12">Front wall S2-S4</text>
-<rect x="277.4" y="299.5" width="22.5" height="85.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<rect x="24.0" y="415.8" width="22.5" height="85.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<rect x="47.2" y="415.8" width="45.0" height="55.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
-<text x="50.2" y="426.8" font-size="8" fill="#3a2f12">Back wall S3</text>
+<text x="27.0" y="189.8" font-size="8" fill="#3a2f12">End wall left</text>
+<rect x="140.2" y="178.8" width="115.5" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="143.2" y="189.8" font-size="8" fill="#3a2f12">End wall right</text>
+<rect x="270.0" y="40.0" width="30.0" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="273.0" y="51.0" font-size="8" fill="#3a2f12">Divider D1</text>
+<rect x="256.5" y="178.8" width="30.0" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="259.5" y="189.8" font-size="8" fill="#3a2f12">Divider D4</text>
+<rect x="24.0" y="299.5" width="42.0" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="27.0" y="310.5" font-size="8" fill="#3a2f12">Bay shelf left</text>
+<rect x="66.8" y="299.5" width="42.0" height="120.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="69.8" y="310.5" font-size="8" fill="#3a2f12">Bay shelf right</text>
+<rect x="287.2" y="178.8" width="24.0" height="115.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<rect x="109.5" y="299.5" width="24.0" height="115.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<rect x="134.2" y="299.5" width="96.4" height="102.0" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="137.2" y="310.5" font-size="8" fill="#3a2f12">Drawer bottom</text>
+<rect x="231.4" y="299.5" width="22.5" height="85.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<rect x="254.7" y="299.5" width="22.5" height="85.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<rect x="24.0" y="420.2" width="45.0" height="55.5" fill="#e2c98d" stroke="#5a4a22" stroke-width="0.8"/>
+<text x="27.0" y="431.2" font-size="8" fill="#3a2f12">Back wall S3</text>
 </svg>

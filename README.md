@@ -90,7 +90,7 @@ The core tools know nothing about furniture. Each `fusion_*` / `cad_*` call stan
 |---|---|---|
 | [`examples/enclosure_cadquery.py`](examples/enclosure_cadquery.py) | open source (`cad_run`) | shell, fillets, hole patterns, slots, multi-part colours |
 | [`examples/flange_fusion_run.py`](examples/flange_fusion_run.py) | Fusion (`fusion_run`) | sketches, extrude/join/cut, picking profiles by area, checking against hand arithmetic |
-| [Woodworking add-on](#woodworking-add-on-an-end-to-end-example) | both | a 97-part design, cut list, drawings, hinged parts, built in Fusion |
+| [Woodworking add-on](#woodworking-add-on-an-end-to-end-example) | both | a 95-part design, cut list, drawings, hinged parts, built in Fusion |
 
 ## Make your own add-on
 
@@ -102,15 +102,15 @@ Describe a piece of furniture; get a verified Fusion model, a cut list, a sheet-
 
 ![Rolling oak slat cabinet, rendered by Fusion](docs/examples/woodworking/render.png)
 
-> Built, rendered and checked end to end through this server, from a hand sketch: 97 named parts (arc-cut slats, hinged lids, a pair of push-to-open front doors with two hinges each across the middle three sections, one wide pull-out drawer behind them, finger openings, L-shaped feet hiding four casters), 24 x 22.5 x 24 in, zero interferences, one 4x8 plywood sheet, ~10.9 board feet of oak (12.6 to buy). The Fusion model and the open-source CadQuery model agree to the cubic inch. How the sketch was read: [SKETCH_SPEC.md](docs/examples/woodworking/SKETCH_SPEC.md); the generated [cut list](docs/examples/woodworking/example_cutlist.md).
+> Built, rendered and checked end to end through this server, from a hand sketch: 95 named parts (arc-cut slats, hinged lids, a pair of push-to-open front doors with two hinges each spanning the whole front between the corner slats, one wide pull-out drawer behind them, finger openings, L-shaped feet hiding four casters), 24 x 22.5 x 24 in, zero interferences, one 4x8 plywood sheet, ~11.2 board feet of oak. The Fusion model and the open-source CadQuery model agree to the cubic inch. How the sketch was read: [SKETCH_SPEC.md](docs/examples/woodworking/SKETCH_SPEC.md); the generated [cut list](docs/examples/woodworking/example_cutlist.md).
 
-![Same cabinet with the lids and both front doors open and the drawer pulled out, built with no Autodesk software](docs/examples/woodworking/open_iso_opensource.png)
+![Same cabinet with both front doors open and the drawer pulled out (the lids stay down: a sink sits on top), built with no Autodesk software](docs/examples/woodworking/open_iso_opensource.png)
 
 ![The same open pose built in Fusion](docs/examples/woodworking/fusion_open_render.png)
 
 ![Builder drawing generated with no CAD](docs/examples/woodworking/drawing_three_view.svg)
 
-Try: *"Design a 24-inch rolling oak slat cabinet with three stepped lids, double push-to-open front doors and a pull-out drawer, build it in Fusion, check it and show me."* Details: `open_deg`, `door_open_deg` and `drawer_out` pose the lids, doors and drawer open; `door_pull="bar"` swaps the hidden push latches for slim vertical pulls; `door_span="centre"` limits the doors and drawer to the centre section; `door_leaves=1` gives a single door; `door=False` / `drawer=False` remove them.
+Try: *"Design a 24-inch rolling oak slat cabinet with three stepped lids, double push-to-open front doors and a pull-out drawer, build it in Fusion, check it and show me."* Details: `door_open_deg` and `drawer_out` pose the doors and drawer open (`open_deg` also lifts the lids, off by default); `door_pull="bar"` swaps the hidden push latches for slim vertical pulls; `door_span` is `"full"` (default, the whole front), `"wide"` (middle three sections) or `"centre"`; `door_leaves=1` gives a single door; `door=False` / `drawer=False` remove them.
 
 ## How it compares
 
@@ -124,7 +124,7 @@ See [SECURITY.md](SECURITY.md). In short: loopback only, bearer token (`~/.fusio
 ## What's tested
 
 * 30 unit tests: pure Python (including a signed-volume check that exported meshes are outward-facing and a proof that no cabinet boards overlap), the add-in's HTTP layer with a stubbed Fusion, a real stdio MCP round trip, and the open-source CAD backend (skipped when CadQuery is not installed).
-* Live tests against a real Fusion: build and kernel-verify the 97-part cabinet, views that must differ from each other, 5 export formats, a real render, rollback, API lookup, and a full MCP client round trip that returns images.
+* Live tests against a real Fusion: build and kernel-verify the 95-part cabinet, views that must differ from each other, 5 export formats, a real render, rollback, API lookup, and a full MCP client round trip that returns images.
 * A 30-case capability suite (`tests/integration/capability_suite.py`) covering sketches, constraints, extrude/cut/revolve/sweep/loft, fillet/shell/chamfer/hole, patterns, booleans, components + joints, parameters, timeline edits, materials, measurement, 8 export formats, STEP re-import, CAM setup creation, configurations, rendering and more.
 
 See [docs/COVERAGE.md](docs/COVERAGE.md) for what the Fusion API can and cannot do and [docs/GOTCHAS.md](docs/GOTCHAS.md) for API traps found along the way.
