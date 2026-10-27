@@ -3,7 +3,8 @@ from fusionwright.cabinet import build_cabinet
 from fusionwright.cutlist import cutlist, board_feet, to_markdown, to_csv
 from fusionwright.nesting import nest_sheets, nest_sheets_svg, cut_lumber
 from fusionwright.drawings import three_view_svg
-from fusionwright.meshout import to_stl, to_obj
+from fusionwright.meshout import to_stl, to_obj, mesh_volume, skipped_cuts, triangulate
+from fusionwright import shapes as sh
 from fusionwright.model import Project, frac
 import pytest
 
@@ -25,6 +26,33 @@ def test_three_stepped_heights():
     assert tops == [24.0, 19.0, 14.0]
 
 
+def test_sketch_details_are_present():
+    """Everything read from the hand sketch is modelled, not just boxes."""
+    p = build_cabinet()
+    names = [b.name for b in p.boards]
+    assert sum(n.startswith("Slat front") for n in names) == 10 and sum(n.startswith("Slat back") for n in names) == 10
+    assert sum(n.startswith("Slat left") for n in names) == 6 and sum(n.startswith("Slat right") for n in names) == 6
+    assert sum(n.startswith("Lid ") for n in names) == 5
+    # arc-cut slats: the shape contains a real arc segment and the heights fall from the corners to the centre
+    arcs = [b for b in p.boards if b.group == "front slat"]
+    assert all(any(seg[0] == "a" for seg in b.shape[0]["path"]) for b in arcs)
+    tops = [b.z + b.sz for b in arcs]
+    assert tops[0] > tops[len(tops) // 2] and tops[-1] > tops[len(tops) // 2]
+    # four L-shaped corner feet (two walls + top plate each) hiding four casters (plate, swivel, 2 forks, wheel)
+    assert sum("wall A" in n for n in names) == 4 and sum("wall B" in n for n in names) == 4
+    assert sum(n.endswith("wheel") for n in names) == 4 and sum(n.endswith("top plate") for n in names) == 4
+    # wedge and square openings are cuts through the plywood fronts
+    cuts = [b for b in p.boards if b.shape and any(o["op"] == "cut" for o in b.shape)]
+    assert len(cuts) >= 5
+
+
+def test_open_pose_rotates_the_lids_and_still_fits():
+    p = build_cabinet(open_deg=30)
+    rotated = [b for b in p.boards if b.rot]
+    assert len(rotated) == 4 and all(b.group == "lid" for b in rotated)
+    assert p.overall()[2] > 24.0                      # open lids rise above the closed height
+
+
 def test_slats_on_all_four_sides():
     p = build_cabinet()
     groups = {b.group for b in p.boards}
@@ -34,7 +62,7 @@ def test_slats_on_all_four_sides():
 def test_cutlist_quantities_add_up():
     p = build_cabinet()
     rows = cutlist(p)
-    assert sum(r["qty"] for r in rows) == len(p.boards)
+    assert sum(r["qty"] for r in rows) == sum(1 for b in p.boards if p.materials[b.material]["kind"] != "hardware")
     assert board_feet(rows)["net_bf"] > 0
     assert "board feet" in to_markdown(p)
     assert to_csv(p).startswith("qty,material")
@@ -73,10 +101,11 @@ def test_drawing_is_valid_svg_with_dimensions():
     svg = three_view_svg(build_cabinet())
     assert svg.startswith("<svg") and svg.rstrip().endswith("</svg>")
     assert '24"' in svg and '22 1/2"' in svg
+    assert "<polygon" in svg                          # real outlines (arc scoop), not just rectangles
 
 
-def test_stl_has_positive_volume():
-    """Signed volume from facets == sum of box volumes (checks winding is outward)."""
+def test_stl_winding_is_outward_for_boxes_arcs_and_cylinders():
+    """Signed volume from the written STL facets equals the sum of the parts' own volumes (cuts excluded)."""
     p = build_cabinet()
     stl = to_stl(p, unit_scale=1.0)
     v = [tuple(map(float, m)) for m in re.findall(r"vertex (\S+) (\S+) (\S+)", stl)]
@@ -84,8 +113,26 @@ def test_stl_has_positive_volume():
     for i in range(0, len(v), 3):
         a, b, c = v[i], v[i + 1], v[i + 2]
         vol += (a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0])) / 6
-    assert vol == pytest.approx(sum(b.volume for b in p.boards), rel=1e-6)
-    assert to_obj(p).count("\nv ") == 8 * len(p.boards)
+    assert vol > 3000 and vol == pytest.approx(mesh_volume(p), rel=1e-6)
+    assert skipped_cuts(p) == 5                       # this fallback leaves cuts out and says so
+    assert to_obj(p).count("\no ") > 80
+
+
+def test_triangulate_concave_polygon_covers_its_area():
+    poly = [(0, 0), (4, 0), (4, 4), (2, 1), (0, 4)]    # an arrow-head notch: concave
+    tris = triangulate(poly)
+    area = sum(abs((poly[b][0] - poly[a][0]) * (poly[c][1] - poly[a][1]) -
+                   (poly[b][1] - poly[a][1]) * (poly[c][0] - poly[a][0])) / 2 for a, b, c in tris)
+    assert area == pytest.approx(abs(sum(poly[i][0] * poly[(i + 1) % 5][1] - poly[(i + 1) % 5][0] * poly[i][1]
+                                         for i in range(5)) / 2))
+
+
+def test_shapes_validate_input():
+    with pytest.raises(ValueError):
+        sh.prism("ab", [["m", 0, 0]], 0, 1)
+    with pytest.raises(ValueError):
+        sh.cyl("q", (0, 0, 0), 1, 1)
+    assert sh.shape_bbox([sh.box(0, 0, 0, 1, 2, 3), sh.box(0, 0, 0, 9, 9, 9, "cut")])[1] == (1, 2, 3)
 
 
 def test_json_roundtrip():
@@ -99,6 +146,10 @@ def test_bad_params_are_explained():
         build_cabinet(section_widths=[1, 1, 1, 1, 1])
     with pytest.raises(ValueError, match="Heights"):
         build_cabinet(center_h=30)
+    with pytest.raises(ValueError, match="base_z"):
+        build_cabinet(base_z=2.0)
+    with pytest.raises(ValueError, match="foot_arm"):
+        build_cabinet(foot_arm=3.5)
 
 
 def test_frac():

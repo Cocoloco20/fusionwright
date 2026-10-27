@@ -16,6 +16,8 @@ def _q(x: float) -> float:
 def cutlist(project: Project) -> list[dict]:
     groups: "OrderedDict[tuple, dict]" = OrderedDict()
     for b in project.boards:
+        if project.materials.get(b.material, {}).get("kind") == "hardware":
+            continue                                   # purchased hardware is not cut
         key = (b.material, _q(b.thickness), _q(b.width), _q(b.length))
         g = groups.setdefault(key, {"material": b.material, "thickness": key[1], "width": key[2],
                                     "length": key[3], "qty": 0, "parts": []})

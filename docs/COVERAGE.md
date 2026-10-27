@@ -21,3 +21,14 @@
 | Any menu command | Available | `fusion_ui_command` runs any of ~3,000 command ids; dialogs still need finishing in Fusion |
 | Cloud data (Fusion Team/hubs) | Out of scope | by design nothing is saved to the cloud; Autodesk's Fusion Data MCP covers this |
 | Drag gestures, canvas-only manipulations | Manual | would need computer-use style control |
+
+## Open-source route (no Autodesk software)
+
+| Area | Status | Notes |
+|---|---|---|
+| Any solid from CadQuery code (`cad_run`) | Tested | separate process, time limit, dangerous calls blocked |
+| Exact STEP (names, colours), STL, BREP | Tested | written in millimetres |
+| Kernel validity and boolean interference | Tested | whole cabinet: 90 solids, 0 interferences, also with lids open |
+| Shaded previews from 8 views | Tested | numpy depth buffer, no GPU or display |
+| Fusion vs CadQuery agreement | Tested live | same cabinet: 3454.89 in3 in both, 24 x 22.5 x 24 in |
+| Assemblies with mates, FEA, CAM | Not covered | use Fusion or FreeCAD |

@@ -2,15 +2,68 @@
 dimensions, title block. Sheet is ANSI B landscape (17 x 11 in) at 100 px per sheet inch."""
 from __future__ import annotations
 
+import math
 from datetime import date
 from xml.sax.saxutils import escape
 
-from .model import Project, frac
+from . import shapes as sh
+from .model import Board, Project, frac
 
 PX = 100            # sheet px per sheet inch
 SHEET_W, SHEET_H = 17 * PX, 11 * PX
 MARGIN = int(0.75 * PX)
 TITLE_H = int(1.1 * PX)
+
+
+def _hull(pts):
+    pts = sorted(set((round(x, 6), round(y, 6)) for x, y in pts))
+    if len(pts) <= 2:
+        return pts
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    lo, up = [], []
+    for q in pts:
+        while len(lo) >= 2 and cross(lo[-2], lo[-1], q) <= 0:
+            lo.pop()
+        lo.append(q)
+    for q in reversed(pts):
+        while len(up) >= 2 and cross(up[-2], up[-1], q) <= 0:
+            up.pop()
+        up.append(q)
+    return lo[:-1] + up[:-1]
+
+
+# view -> which model axes become the drawing's (right, up) coordinates, and the axis the viewer looks along
+_AXES = {"front": (0, 2, 1), "top": (0, 1, 2), "side": (1, 2, 0)}
+
+
+def _part_polys(b: Board, view: str) -> list[tuple[str, list[tuple[float, float]]]]:
+    """[(op, polygon)] silhouette of each shape operation of a part, in model inches projected for `view`.
+    A profile viewed along its extrusion axis keeps its true outline (arcs included); everything else is
+    drawn as its bounding rectangle, and hinged-open parts as the hull of their rotated box."""
+    ui, vi, wi = _AXES[view]
+    ops = b.shape if b.shape is not None else [sh.box(b.x, b.y, b.z, b.sx, b.sy, b.sz)]
+    out = []
+    for op in ops:
+        lo, hi = sh.op_bbox(op)
+        if b.rot:
+            corners = [sh.rotate_point((x, y, z), b.rot) for x in (lo[0], hi[0]) for y in (lo[1], hi[1])
+                       for z in (lo[2], hi[2])]
+            out.append((op["op"], _hull([(c[ui], c[vi]) for c in corners])))
+            continue
+        poly = None
+        if op["k"] == "prism":
+            axis = {"xz": 1, "yz": 0, "xy": 2}[op["pl"]]
+            if axis == wi:
+                poly = [(sh.to3(op["pl"], u, v, 0)[ui], sh.to3(op["pl"], u, v, 0)[vi]) for u, v in sh.outline(op["path"], 48)]
+        elif op["k"] == "cyl" and "xyz".index(op["ax"]) == wi:
+            c = op["c"]
+            poly = [(c[ui] + op["r"] * math.cos(2 * math.pi * k / 36), c[vi] + op["r"] * math.sin(2 * math.pi * k / 36))
+                    for k in range(36)]
+        if poly is None:
+            poly = [(lo[ui], lo[vi]), (hi[ui], lo[vi]), (hi[ui], hi[vi]), (lo[ui], hi[vi])]
+        out.append((op["op"], poly))
+    return out
 
 
 def _scale_label(s: float) -> str:
@@ -69,29 +122,24 @@ def three_view_svg(project: Project) -> str:
            f'<rect x="{MARGIN / 2}" y="{MARGIN / 2}" width="{SHEET_W - MARGIN}" height="{SHEET_H - MARGIN}" '
            'fill="none" stroke="#111" stroke-width="2"/>']
 
-    # front view (looking +Y): far boards (large Y) first
-    out.append(f'<g id="front">')
-    for b in sorted(project.boards, key=lambda b: -b.y):
-        out.append(f'<rect class="b" x="{fx0 + b.x * s:.1f}" y="{fy0 + (H - b.z - b.sz) * s:.1f}" '
-                   f'width="{b.sx * s:.1f}" height="{b.sz * s:.1f}" fill="{color(b)}"/>')
-    out.append('</g>')
-    # top view (looking down): low Z first
-    out.append('<g id="top">')
-    for b in sorted(project.boards, key=lambda b: b.z):
-        out.append(f'<rect class="b" x="{fx0 + b.x * s:.1f}" y="{top_y0 + (D - b.y - b.sy) * s:.1f}" '
-                   f'width="{b.sx * s:.1f}" height="{b.sy * s:.1f}" fill="{color(b)}"/>')
-    for f in project.features:
-        if f.get("type") == "finger_pull":
-            cx, cy = f["center"]
-            out.append(f'<circle cx="{fx0 + cx * s:.1f}" cy="{top_y0 + (D - cy) * s:.1f}" r="{f["dia"] / 2 * s:.1f}" '
-                       'fill="white" stroke="#111" stroke-width=".8"/>')
-    out.append('</g>')
-    # right-side view (viewer at +X): small X first; front (Y=0) is on the left
-    out.append('<g id="side">')
-    for b in sorted(project.boards, key=lambda b: b.x):
-        out.append(f'<rect class="b" x="{side_x0 + b.y * s:.1f}" y="{fy0 + (H - b.z - b.sz) * s:.1f}" '
-                   f'width="{b.sy * s:.1f}" height="{b.sz * s:.1f}" fill="{color(b)}"/>')
-    out.append('</g>')
+    def poly_svg(poly, mapper, fill, cut=False):
+        pts = " ".join("%.1f,%.1f" % mapper(u, v) for u, v in poly)
+        if cut:
+            return f'<polygon points="{pts}" fill="#000" fill-opacity=".28" stroke="#222" stroke-width=".5"/>'
+        return f'<polygon class="b" points="{pts}" fill="{fill}"/>'
+
+    def draw(view, key, mapper, depth_key):
+        out.append(f'<g id="{view}">')
+        for b in sorted(project.boards, key=depth_key):
+            for op, poly in _part_polys(b, view):
+                out.append(poly_svg(poly, mapper, color(b), cut=(op == "cut")))
+        out.append('</g>')
+
+    # front view (looking +Y): far boards (large Y) first; top view (looking down): low Z first;
+    # right-side view (viewer at +X, front at the left): small X first
+    draw("front", "f", lambda u, v: (fx0 + u * s, fy0 + (H - v) * s), lambda b: -b.y)
+    draw("top", "t", lambda u, v: (fx0 + u * s, top_y0 + (D - v) * s), lambda b: b.z)
+    draw("side", "s", lambda u, v: (side_x0 + u * s, fy0 + (H - v) * s), lambda b: b.x)
 
     # labels
     out.append(f'<text x="{fx0}" y="{fy0 + H * s + 52}" class="lbl">FRONT</text>')

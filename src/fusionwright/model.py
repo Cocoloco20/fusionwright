@@ -1,14 +1,17 @@
-"""Backend-neutral project model: a furniture project is a list of rectangular boards.
+"""Backend-neutral project model: a furniture project is a list of parts ("boards").
 
 Everything here is plain Python (no CAD needed). Units are inches, X = width, Y = depth
-(front at Y=0), Z = up. A board is an axis-aligned box described by its minimum corner and
-its extents.
+(front at Y=0), Z = up. A part carries its bounding box (x, y, z, sx, sy, sz) and, when it is not a plain
+rectangular board, a `shape` (see shapes.py: prisms with arcs, cylinders, cuts) and an optional `rot`
+(hinge rotation). The bounding box is always the *unrotated* extent, which is what a cut list needs.
 """
 from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
 from typing import Any
+
+from . import shapes as sh
 
 SOLID = "solid"      # solid lumber (priced by board foot)
 SHEET = "sheet"      # sheet goods such as plywood (priced by sheet)
@@ -26,6 +29,27 @@ class Board:
     sy: float
     sz: float
     grain: str = "z"           # axis the grain runs along: x | y | z
+    shape: list | None = None  # None = plain box; otherwise a list of shape operations (shapes.py)
+    rot: dict | None = None    # {"o": [x,y,z], "ax": [x,y,z], "deg": float}: hinge rotation about an axis
+    note: str = ""
+
+    @classmethod
+    def from_shape(cls, name: str, group: str, material: str, shape: list, rot: dict | None = None,
+                   grain: str = "z", note: str = "") -> "Board":
+        lo, hi = sh.shape_bbox(shape)
+        return cls(name, group, material, lo[0], lo[1], lo[2], hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2],
+                   grain, shape, rot, note)
+
+    @property
+    def is_box(self) -> bool:
+        return self.shape is None and self.rot is None
+
+    def world_bbox(self):
+        """Bounding box in the assembled model (applies the hinge rotation if any)."""
+        lo, hi = (self.x, self.y, self.z), self.max_corner
+        if self.rot:
+            lo, hi = sh.rotated_bbox(lo, hi, self.rot)
+        return lo, hi
 
     @property
     def size(self) -> tuple[float, float, float]:
@@ -66,9 +90,9 @@ class Project:
     def bounds(self) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
         if not self.boards:
             return (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)
-        lo = (min(b.x for b in self.boards), min(b.y for b in self.boards), min(b.z for b in self.boards))
-        hi = (max(b.max_corner[0] for b in self.boards), max(b.max_corner[1] for b in self.boards),
-              max(b.max_corner[2] for b in self.boards))
+        wb = [b.world_bbox() for b in self.boards]
+        lo = tuple(min(w[0][i] for w in wb) for i in range(3))
+        hi = tuple(max(w[1][i] for w in wb) for i in range(3))
         return lo, hi
 
     def overall(self) -> tuple[float, float, float]:
@@ -76,9 +100,10 @@ class Project:
         return (hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2])
 
     def interferences(self, tol: float = 1e-6) -> list[tuple[str, str, float]]:
-        """Pairs of boards whose volumes overlap (exact for axis-aligned boxes)."""
+        """Pairs of plain boxes whose volumes overlap (exact). Shaped or rotated parts are skipped here; the CAD
+        backends check those with the real kernel (cad_check / fusion_check)."""
         out = []
-        bs = self.boards
+        bs = [b for b in self.boards if b.is_box]
         for i in range(len(bs)):
             a = bs[i]
             for j in range(i + 1, len(bs)):

@@ -74,6 +74,7 @@ def bodies_all():
 '''
 
 BUILD = r'''
+# Builds every part of a Project (see shapes.py) as its own named component. Model coordinates are inches, Z up.
 boards, start, end = ARGS['boards'], ARGS['start'], ARGS['end']
 terms = ARGS.get('appearance_terms', {})
 aps = {}
@@ -82,17 +83,112 @@ for key, t in terms.items():
     if src is not None:
         aps[key] = design.appearances.itemByName('fw_' + key) or design.appearances.addByCopy(src, 'fw_' + key)
 existing = set(o.component.name for o in root.occurrences)
-made, skipped = 0, 0
+AX = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}
+
+def _to3(pl, u, v, w):
+    return (u, w, v) if pl == 'xz' else ((w, u, v) if pl == 'yz' else (u, v, w))
+
+def _plane_at(comp, pl, coord):
+    base = {'xy': comp.xYConstructionPlane, 'xz': comp.xZConstructionPlane, 'yz': comp.yZConstructionPlane}[pl]
+    axis = {'xy': (0, 0, 1), 'xz': (0, 1, 0), 'yz': (1, 0, 0)}[pl]
+    n = base.geometry.normal
+    s = 1.0 if (n.x * axis[0] + n.y * axis[1] + n.z * axis[2]) > 0 else -1.0
+    if abs(coord) < 1e-9:
+        return base, s
+    pi = comp.constructionPlanes.createInput()
+    pi.setByOffset(base, VI.createByReal(s * coord * IN))
+    return comp.constructionPlanes.add(pi), s
+
+def _profile(sk):
+    best, area = None, -1.0
+    for i in range(sk.profiles.count):
+        pr = sk.profiles.item(i)
+        a = pr.areaProperties().area
+        if a > area:
+            best, area = pr, a
+    return best
+
+def _extrude(comp, sk, a, b, s, op, body):
+    prof = _profile(sk)
+    inp = comp.features.extrudeFeatures.createInput(prof, op)
+    d = adsk.fusion.ExtentDirections.PositiveExtentDirection if s > 0 else adsk.fusion.ExtentDirections.NegativeExtentDirection
+    inp.setOneSideExtent(adsk.fusion.DistanceExtentDefinition.create(VI.createByReal((b - a) * IN)), d)
+    if op != FO.NewBodyFeatureOperation and body is not None:
+        inp.participantBodies = [body]
+    return comp.features.extrudeFeatures.add(inp)
+
+def _pt(sk, p):
+    q = sk.modelToSketchSpace(P3(p[0] * IN, p[1] * IN, p[2] * IN))
+    return adsk.core.Point3D.create(q.x, q.y, 0)
+
+def _make_op(comp, o, body):
+    op = FO.NewBodyFeatureOperation if body is None else (FO.JoinFeatureOperation if o['op'] == 'add' else FO.CutFeatureOperation)
+    k = o['k']
+    if k == 'box':
+        x, y, z = o['o']; sx, sy, sz = o['s']
+        plane, s = _plane_at(comp, 'xy', z)
+        sk = comp.sketches.add(plane)
+        sk.sketchCurves.sketchLines.addTwoPointRectangle(_pt(sk, (x, y, z)), _pt(sk, (x + sx, y + sy, z)))
+        return _extrude(comp, sk, z, z + sz, s, op, body)
+    if k == 'cyl':
+        c, r, h, ax = o['c'], o['r'], o['h'], o['ax']
+        pl = {'x': 'yz', 'y': 'xz', 'z': 'xy'}[ax]
+        i = 'xyz'.index(ax)
+        a = c[i] - h / 2
+        plane, s = _plane_at(comp, pl, a)
+        sk = comp.sketches.add(plane)
+        p = list(c); p[i] = a
+        sk.sketchCurves.sketchCircles.addByCenterRadius(_pt(sk, p), r * IN)
+        return _extrude(comp, sk, a, a + h, s, op, body)
+    pl, path, a, b = o['pl'], o['path'], o['a'], o['b']
+    plane, s = _plane_at(comp, pl, a)
+    sk = comp.sketches.add(plane)
+    cur = (path[0][1], path[0][2])
+    start = cur
+    for seg in path[1:]:
+        if seg[0] == 'l':
+            end_ = (seg[1], seg[2])
+            sk.sketchCurves.sketchLines.addByTwoPoints(_pt(sk, _to3(pl, cur[0], cur[1], a)), _pt(sk, _to3(pl, end_[0], end_[1], a)))
+        else:
+            end_ = (seg[3], seg[4])
+            sk.sketchCurves.sketchArcs.addByThreePoints(_pt(sk, _to3(pl, cur[0], cur[1], a)),
+                                                         adsk.core.Point3D.create(*(lambda q: (q.x, q.y, 0))(sk.modelToSketchSpace(P3(*[c * IN for c in _to3(pl, seg[1], seg[2], a)])))),
+                                                         _pt(sk, _to3(pl, end_[0], end_[1], a)))
+        cur = end_
+    if abs(cur[0] - start[0]) > 1e-9 or abs(cur[1] - start[1]) > 1e-9:
+        sk.sketchCurves.sketchLines.addByTwoPoints(_pt(sk, _to3(pl, cur[0], cur[1], a)), _pt(sk, _to3(pl, start[0], start[1], a)))
+    return _extrude(comp, sk, a, b, s, op, body)
+
+made, skipped, rotated = 0, 0, 0
 for b in boards[start:end]:
     if b['name'] in existing:
         skipped += 1
         continue
-    occ, body = board(b['name'], b['x'], b['y'], b['z'], b['sx'], b['sy'], b['sz'])
+    occ = root.occurrences.addNewComponent(adsk.core.Matrix3D.create())
+    comp = occ.component
+    comp.name = b['name']
+    ops = b.get('shape') or [{'op': 'add', 'k': 'box', 'o': [b['x'], b['y'], b['z']], 's': [b['sx'], b['sy'], b['sz']]}]
+    body = None
+    for o in ops:
+        feat = _make_op(comp, o, body)
+        if body is None:
+            body = feat.bodies.item(0)
+            body.name = b['name']
     ap = aps.get(b['material'])
     if ap is not None:
         body.appearance = ap
+    r = b.get('rot')
+    if r:
+        m = adsk.core.Matrix3D.create()
+        m.setToRotation(math.radians(r['deg']), adsk.core.Vector3D.create(*r['ax']),
+                        P3(r['o'][0] * IN, r['o'][1] * IN, r['o'][2] * IN))
+        try:
+            occ.transform2 = m
+        except Exception:
+            occ.transform = m
+        rotated += 1
     made += 1
-result = {'made': made, 'skipped_existing': skipped, 'occurrences': root.occurrences.count,
+result = {'made': made, 'skipped_existing': skipped, 'rotated': rotated, 'occurrences': root.occurrences.count,
           'appearances_applied': sorted(aps)}
 '''
 

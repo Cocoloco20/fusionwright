@@ -16,4 +16,9 @@ Each of these cost a failed test before it was understood. They are baked into t
 | `designSheetMetalRules.count` raises `smDataRoot` | sheet-metal data does not exist until the design is a sheet-metal design | only touch sheet-metal rules inside a sheet-metal component |
 | `design.animationManager`/`snapshots` raise `assetRoot` | the animation workspace has not been opened | check class API, or activate the Animation workspace |
 | `DrawingManager.createDrawingInput()` rejects a design | it needs a saved `DataFile`, not a live document | drawings require a cloud-saved design |
-| Each tool call must finish fast | add-ins run code on the main thread | chunk big builds (this project builds 20 boards per call) |
+| Each tool call must finish fast | add-ins run code on the main thread | chunk big builds (this project builds a handful of parts per call) |
+| A sketch on the XZ plane extrudes the wrong way or lands mirrored | the plane normal and the sketch axes depend on the document's orientation | place points with `sketch.modelToSketchSpace`, and pick `Positive`/`Negative` extent from the sign of `plane.geometry.normal` (done in `BUILD`) |
+| Rotating a part inside its component moves the wrong thing | the component's own origin stays put | build in model coordinates inside an identity-transform occurrence, then set `occurrence.transform2` to a rotation about the hinge line |
+| `fusion_render` came out black | the camera was left under the model by the last `bottom` look | set an iso view with `fusion_look` right before rendering |
+| `list[Any]` return type of an MCP tool fails to serialize `Image` | structured-output schema | annotate as `list[str | Image]` |
+

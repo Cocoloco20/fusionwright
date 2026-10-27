@@ -7,11 +7,14 @@ An open-source [MCP](https://modelcontextprotocol.io) server that lets an AI ass
 | Layer | Needs | What you get |
 |---|---|---|
 | `wood_*` tools | **Nothing.** Pure Python, no CAD, no account | Parametric design, cut list (md/csv), board-foot estimate, plywood sheet nesting, lumber cutting plan, three-view dimensioned drawing (SVG), STL and OBJ |
+| `cad_*` tools | `pip install "fusionwright[cad]"` ([CadQuery](https://github.com/CadQuery/cadquery) / OpenCascade, open source, **no Autodesk software, no membership**) | Run *any* CadQuery code for *any* object (brackets, enclosures, furniture), exact STEP + STL, volume/validity/interference checks, shaded previews. The wood designs also get exact STEP with names and colours |
 | `fusion_*` tools | A licensed Autodesk Fusion (the free Personal-use tier works) | Build the design as named components in your live Fusion session, then *see* it, *verify* it with the kernel, render it, export it, or script anything else |
 
 ![Rolling oak slat cabinet, rendered by Fusion](docs/images/render.png)
 
-> Built, rendered and checked end to end by an AI through this server: 76 named boards, 24 x 22.5 x 24 in, zero interferences, one 4x8 plywood sheet, ~11.4 board feet of oak.
+> Built, rendered and checked end to end through this server, from a hand sketch: 90 named parts (arc-cut slats, hinged lids, finger openings, L-shaped feet hiding four casters), 24 x 22.5 x 24 in, zero interferences, one 4x8 plywood sheet, ~9.2 board feet of oak. The Fusion model and the open-source CadQuery model agree to the cubic inch (3454.89 in3). Details of how the sketch was read: [docs/SKETCH_SPEC.md](docs/SKETCH_SPEC.md).
+
+![Same cabinet with the lids hinged open, built with no Autodesk software](docs/images/open_iso_opensource.png)
 
 ![Builder drawing generated with no CAD](docs/images/drawing_three_view.svg)
 
@@ -37,13 +40,18 @@ It deliberately does **not** touch Fusion's licensing: it only uses Autodesk's d
 
 Only want the no-CAD tools? Skip step 1; `wood_design_cabinet` and `wood_report` work on their own. Outputs land in `~/fusionwright-projects/` (override with `FUSIONWRIGHT_HOME`).
 
-## Tools (13)
+## Tools (18)
 
 A small surface on purpose: [fewer, higher-level tools beat dozens of thin wrappers](https://anthropic.com/engineering/writing-tools-for-agents).
 
 | Tool | Purpose |
 |---|---|
-| `wood_design_cabinet` | Parametric slatted rolling cabinet; writes cut list, drawing, sheet layout, STL, OBJ, project.json |
+| `wood_design_cabinet` | Parametric slatted rolling cabinet (arc scoop, five hinged lids, casters hidden in L-shaped feet; `open_deg` poses the lids open); writes cut list, drawing, sheet layout, STL, OBJ, project.json, and with CadQuery an exact STEP + previews |
+| `cad_run` | Run CadQuery code for any solid; returns STEP, STL, measurements and previews (open source, no Fusion) |
+| `cad_preview` | Shaded previews of the last `cad_run` result or the current project (8 views), no CAD application needed |
+| `cad_check` | Exact kernel check of the project: validity, boolean interference, expected size |
+| `cad_export` | STEP (names + colours), STL or BREP with the open-source kernel |
+| `cad_status` | Is the open-source backend installed? |
 | `wood_report` | `cutlist`, `lumber` (1-D stock plan), `sheets` (plywood nesting), `drawing` |
 | `wood_build_in_fusion` | Build the project in the open Fusion design, then verify it |
 | `fusion_status` | Is Fusion reachable? Which document? |
@@ -88,7 +96,7 @@ Tested on macOS with Fusion 2706.x. Windows is untested (the add-in is cross-pla
 
 ## Roadmap
 
-Adapter for Autodesk's official Fusion MCP as an alternative backend · open CAD backend (CadQuery/FreeCAD) so the same designs build with no Fusion at all · more generators (bookcase, table, bench, shelf) and real joinery (dados, mortise-and-tenon, dovetails) · driving boards from Fusion user parameters · MCP Apps live 3D preview and cut-list viewer · MCP Tasks for long renders · a cross-model evaluation suite.
+Adapter for Autodesk's official Fusion MCP as an alternative backend · FreeCAD as a second open backend · more generators (bookcase, table, bench, shelf) and real joinery (dados, mortise-and-tenon, dovetails) · driving boards from Fusion user parameters · MCP Apps live 3D preview and cut-list viewer · MCP Tasks for long renders · a cross-model evaluation suite.
 
 ## Not affiliated
 
