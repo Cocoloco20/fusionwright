@@ -248,14 +248,14 @@ def wood_design_cabinet(width: float = 24.0, depth: float = 22.5, tower_h: float
                         skin_t: float = 0.5, ply_t: float = 0.75, lid_t: float = 0.75, base_z: float = 3.25,
                         caster_h: float = 2.5, foot_arm: float = 4.5, arc_on_back: bool = True,
                         open_deg: float = 0.0, door: bool = True, door_open_deg: float = 0.0,
-                        door_pull: str = "push", door_leaves: int = 2, drawer: bool = True,
+                        door_pull: str = "push", door_leaves: int = 2, door_span: str = "wide", drawer: bool = True,
                         drawer_out: float = 0.0, drawer_depth: float = 18.0,
                         section_widths: list[float] | None = None,
                         name: str = "Rolling oak slat cabinet") -> dict:
     """Design the rolling oak-slat cabinet from the hand sketch (inches): vertical oak slats on four sides, a circular
     scoop cut through the slat tops, five hinged lids at 24/19/14 in, stepped plywood boxes with finger openings,
-    a pair of push-to-open front doors (2 hinges each) onto the large centre compartment, which holds one pull-out
-    drawer (door_open_deg=90 and drawer_out=12 show them open; door_pull='bar' adds slim vertical pulls;
+    a pair of push-to-open front doors (2 hinges each) across the centre and both step sections (door_span='centre'
+    for the centre only) onto one large bay holding a pull-out drawer (door_open_deg=90 and drawer_out=12 show them open; door_pull='bar' adds slim vertical pulls;
     door_leaves=1 gives one door), and four L-shaped corner feet that hide swivel casters. open_deg shows the lids
     hinged open (try 30).
     Writes cut list, three-view drawing, sheet layout, STL, OBJ, project.json and, if CadQuery is installed, an exact
@@ -265,7 +265,7 @@ def wood_design_cabinet(width: float = 24.0, depth: float = 22.5, tower_h: float
                           front_slats=front_slats, side_slats=side_slats, slat_gap=slat_gap, skin_t=skin_t,
                           ply_t=ply_t, lid_t=lid_t, base_z=base_z, caster_h=caster_h, foot_arm=foot_arm,
                           arc_on_back=arc_on_back, open_deg=open_deg, door=door, door_open_deg=door_open_deg, door_pull=door_pull,
-                          door_leaves=door_leaves, drawer=drawer, drawer_out=drawer_out, drawer_depth=drawer_depth,
+                          door_leaves=door_leaves, door_span=door_span, drawer=drawer, drawer_out=drawer_out, drawer_depth=drawer_depth,
                           section_widths=section_widths, name=name)
     except ValueError as e:
         raise ToolError(str(e))
